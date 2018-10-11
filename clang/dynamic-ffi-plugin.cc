@@ -3,6 +3,7 @@
 
 #include <string>
 #include <set>
+#include <iostream>
 
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
@@ -20,7 +21,7 @@ typedef std::set<std::string> TemplateSet;
 
 class ffiVisitor : public RecursiveASTVisitor<ffiVisitor> {
 private:
-  const TemplateSet &templates;
+  TemplateSet templates;
 public:
   ffiVisitor(TemplateSet &templates) : templates(templates) {}
   bool VisitFunctionDecl(FunctionDecl *FD) {
@@ -42,11 +43,11 @@ public:
   bool HandleTopLevelDecl(DeclGroupRef decls) override {
     for (DeclGroupRef::iterator i = decls.begin(), 
          e = decls.end(); i != e; i++) {
-      if (const NamedDecl  *decl = dyn_cast<NamedDecl>((Decl*) *i)) {
-        llvm::errs() << "top-level-decl: \"" << decl->getNameAsString() << "\"\n";
-      }
-      if (const FunctionDecl  *decl = dyn_cast<FunctionDecl>((Decl*) *i)) {
-        llvm::errs() << "   num params: " << decl->getNumParams() << "\n";
+      if (const FunctionDecl  *func_decl = dyn_cast<FunctionDecl>((Decl*) *i)) {
+        if (const NamedDecl  *named_decl = dyn_cast<NamedDecl>((Decl*) *i)) {
+          std::cout << "function name: \"" << named_decl->getNameAsString() << "\"\n";
+          std::cout << "   num params: " << func_decl->getNumParams() << "\n";
+        }
       }
     }
     return true;
@@ -67,7 +68,7 @@ protected:
     return true;
   }
   void PrintHelp(llvm::raw_ostream& out) {
-    out << "You don't need help\n";
+    out << "You don't need help yet\n";
   }
 
 }; 
