@@ -48,12 +48,11 @@ are also parsed.
 #lang racket/base
 (require dynamic-ffi)
 
-(define function-defs (parse-header "example.c"))
-
-(printf "~a\n" function-defs)
+;; Gets function declarations and 
+;; prints them as strings for now
+(dynamic-ffi-run "example.c")
 ```
 
-# Todo
-Investigate the ability to clang API calls directly to the racket ffi:
-
+# TODO
+dynamic-ffi should return ffi objects or racket structs
 

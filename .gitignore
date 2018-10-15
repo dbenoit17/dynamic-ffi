@@ -6,3 +6,5 @@ compiled/
 /doc/
 *.so
 *.swp
+llvm
+build

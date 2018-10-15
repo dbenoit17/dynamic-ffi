@@ -1,8 +1,7 @@
 #lang racket/base
 
-(require "make.rkt")
-(provide (all-from-out "make.rkt"))
-
+(require "dynamic-ffi.rkt")
+(provide (all-from-out "dynamic-ffi.rkt"))
 
 (module+ test
   (require rackunit))

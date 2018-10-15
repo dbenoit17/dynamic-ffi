@@ -15,7 +15,7 @@
 using namespace clang;
 
 /* begin plugin namespace */ 
-namespace {
+namespace ffi {
 
 typedef std::set<std::string> TemplateSet;
 
@@ -54,28 +54,20 @@ public:
   }
 };
 
-class ffiPluginAction : public PluginASTAction {
+class ffiPluginAction : public ASTFrontendAction {
+public:
+  ffiPluginAction() {this->matches = 0;}
 private:
   TemplateSet templates;
+  unsigned long long matches;
 protected:
   std::unique_ptr<ASTConsumer> 
     CreateASTConsumer(CompilerInstance &compiler,
                       llvm::StringRef) override {
       return llvm::make_unique<ffiASTConsumer>(compiler, templates);
     }
-  bool ParseArgs(const CompilerInstance &CI,
-                 const std::vector<std::string> &args) override {
-    return true;
-  }
-  void PrintHelp(llvm::raw_ostream& out) {
-    out << "You don't need help yet\n";
-  }
-
 }; 
 
 } /* end plugin namespace */
-
-static FrontendPluginRegistry::Add<ffiPluginAction>
-X("dynamic-ffi", "provide data for dynamic ffi creation");
 
 #endif /* DYNAMIC_FFI_H */
