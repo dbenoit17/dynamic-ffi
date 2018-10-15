@@ -19,33 +19,18 @@ using namespace clang::tooling;
 /* begin plugin namespace */ 
 namespace ffi {
 
-typedef std::set<std::string> TemplateSet;
-
 class ffiAccumulator {
 public:
   int matches;
   ffiAccumulator() {this->matches = 0;};
 };
 
-class ffiVisitor : public RecursiveASTVisitor<ffiVisitor> {
-private:
-  TemplateSet templates;
-public:
-  ffiVisitor(TemplateSet &templates) : templates(templates) {}
-  bool VisitFunctionDecl(FunctionDecl *FD) {
-    return true;
-  }
-};
-
 class ffiASTConsumer : public ASTConsumer {
 private:
-  CompilerInstance &compiler;
-  TemplateSet templates;
   ffiAccumulator &accumulator;
 public:
-  ffiASTConsumer(CompilerInstance &compiler,
-              TemplateSet templates, ffiAccumulator &accumulator)
-     : compiler(compiler), templates(templates), accumulator(accumulator) {}
+  ffiASTConsumer(ffiAccumulator &accumulator)
+   : accumulator(accumulator) {}
   /* overrideable handler methods
      https://clang.llvm.org/doxygen/classclang_1_1ASTConsumer.html 
    */
@@ -68,14 +53,12 @@ class ffiPluginAction : public ASTFrontendAction {
 public:
   ffiPluginAction(ffiAccumulator &accumulator) 
     : accumulator(accumulator){}
-private:
-  TemplateSet templates;
 protected:
   ffiAccumulator &accumulator;
   std::unique_ptr<ASTConsumer> 
     CreateASTConsumer(CompilerInstance &compiler,
                       llvm::StringRef) override {
-      return llvm::make_unique<ffiASTConsumer>(compiler, templates, accumulator);
+      return llvm::make_unique<ffiASTConsumer>(accumulator);
     }
 }; 
 
