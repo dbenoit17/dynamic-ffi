@@ -5,13 +5,21 @@
 
 (define dynamic-ffi (ffi-lib dynamic-ffi-lib))
 
-(provide dynamic-ffi-run)
+(provide dynamic-ffi-parse
+         dynamic-ffi-deep-parse)
 
-(define (dynamic-ffi-run . c-headers)
+(define (make-ffi-parser obj)
+  (λ c-headers
+    (define c_func
+      (get-ffi-obj obj dynamic-ffi
+       (_fun _int (_array/list
+                    _string/utf-8
+                    (+ (length c-headers ) 1))
+           -> _int)
+         (lambda () (error "error"))))
   (define argc (+ (length c-headers) 1))
-  (define argv (cons "dynamic-ffi-rkt" c-headers))
-  (define ctool 
-    (get-ffi-obj "ctool_wrapper" dynamic-ffi 
-     (_fun _int (_array/list _string/utf-8 argc) -> _int) 
-       (lambda () (error "error"))))
-  (ctool argc argv))
+  (define argv (cons "dynamic-ffi-rkt" c-headers ))
+  (c_func argc argv)))
+
+(define dynamic-ffi-parse (make-ffi-parser "ffi_parse"))
+(define dynamic-ffi-deep-parse (make-ffi-parser "ffi_deep_parse"))

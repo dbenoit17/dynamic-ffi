@@ -11,19 +11,22 @@ CXXFLAGS += -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS \
 	    -fno-rtti -std=c++11 -Wall
 
 TEST_SRC = test-prg.c
-DYNAMIC_FFI_SRC=../ffi/dynamic-ffi.cc
-DYNAMIC_FFI_O=dynamic-ffi.so
+DYNAMIC_FFI_CC_SRC=../ffi/dynamic-ffi.cc
+DYNAMIC_FFI_CC_O=./dynamic-ffi.cc.so
+DYNAMIC_FFI_C_SRC=../ffi/dynamic-ffi.c
+DYNAMIC_FFI_C_O=./dynamic-ffi.c.so
 
 
 
-test-tool: dynamic-ffi.so test-tool.so
-	clang++ -v ./dynamic-ffi.so ./test-tool.so -o test-tool
+test-tool: dynamic-ffi.cc.so test-tool.so
+	clang++ -v -g $(DYNAMIC_FFI_CC_O) ./test-tool.so -o test-tool
 
-test-tool.so:
-	clang -v test-tool.c -fPIC $(LDFLAGS) -o test-tool.so
+test-tool.so: test-tool.c
+	clang -v -g test-tool.c -fPIC $(LDFLAGS) -o test-tool.so
 
-dynamic-ffi.so:  $(DYNAMIC_FFI_SRC)
-	clang++ -v $(DYNAMIC_FFI_SRC) $(CXXFLAGS)  $(TOOL_FLAGS) -o $(DYNAMIC_FFI_O) $(shell llvm-config --cxxflags --ldflags --libs --libfiles --systemlibs) $(LDFLAGS)
+dynamic-ffi.cc.so: $(DYNAMIC_FFI_CC_SRC)
+	clang++ -v -g $(DYNAMIC_FFI_CC_SRC) $(CXXFLAGS)  $(TOOL_FLAGS) -o $(DYNAMIC_FFI_CC_O) $(shell llvm-config --cxxflags --ldflags --libs --libfiles --systemlibs) $(LDFLAGS)
+
 
 clean:
 	rm *.o *.so test-tool
