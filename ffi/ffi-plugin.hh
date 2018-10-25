@@ -14,7 +14,7 @@
 #include "clang/Frontend/FrontendActions.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "dynamic-ffi.h"
+#include "header-parse.h"
 
 using namespace clang;
 using namespace clang::tooling;

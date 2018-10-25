@@ -4,7 +4,7 @@
 #include "clang/Tooling/Tooling.h"
 
 #include "ffi-plugin.hh"
-#include "dynamic-ffi.h"
+#include "header-parse.h"
 
 using namespace clang::tooling;
 using namespace clang;
