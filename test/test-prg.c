@@ -19,10 +19,15 @@ typedef struct {
   char c;
 } my_struct;
 
-int adder(int x, int y) { return x + y; }
+int *adder(int x, int y) {
+  static int z = 0;
+  z = x + y + z;
+  return &z;
+}
 
 int main(int argc, char** argv) {
   my_struct st = { 4, 'd'};
-  adder(1,2);
+  int b = *adder(1,2);
+  printf("%d\n",b);
   return 0;
 }

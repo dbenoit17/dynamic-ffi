@@ -1,4 +1,3 @@
-#include <iostream>
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
@@ -38,14 +37,12 @@ c_decl_array dynamic_ffi_parse(int argc, const char **argv, int deep_parse) {
   ffiAccumulator acc(source_list);
 
   // Run the tool
-  std::cout << "\n\nRunning dynamic-ffi parse\n";
   int ret = tool.run(newFFIActionFactory<ffiPluginAction>(acc, deep_parse).get());
-  std::cout << "\nParsing Complete.\n";
-  if (! (ret || true)) {
+/*  if (! (ret || true)) {
     std::cout << "Dynamic ffi encountered an error.  Clang returned exit code: " << ret
          << "See Clang output for more details.  Exiting...\n";
     exit(ret);
-  }
+  } */
 
   std::vector<c_decl> vdecls = acc.get_c_decls();
   c_decl * declarations = (c_decl*) malloc(sizeof(c_decl) * vdecls.size());
@@ -195,22 +192,6 @@ const char* c_type_get_str(c_type s) {
     printf("unknown c_type");
     exit(0);
   }
-}
-
-c_type_id c_type_get_id(c_type *t) {
-  return t->data.composite.id;
-}
-
-c_type_size c_type_get_size(c_type *t) {
-  return t->type_size;
-}
-
-unsigned int c_type_get_field_length(c_type *t) {
-  return t->data.composite.field_length;
-}
-
-c_type *c_type_get_fields(c_type *t) {
-  return t->data.composite.fields;
 }
 
 void c_type_free_field(c_type *t) {

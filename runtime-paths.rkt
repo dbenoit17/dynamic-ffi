@@ -4,6 +4,6 @@
 
 (provide (all-defined-out))
 
-(define-runtime-path dynamic-ffi.cc "ffi/dynamic-ffi.cc")
-(define-runtime-path dynamic-ffi.so "ffi/dynamic-ffi.so")
-(define-runtime-path dynamic-ffi-lib "ffi/dynamic-ffi")
+(define-runtime-path header-parse.cc "ffi/header-parse.cc")
+(define-runtime-path header-parse.so "ffi/header-parse.so")
+(define-runtime-path header-parse-lib "ffi/header-parse")

@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,23 +14,22 @@ typedef enum {
 } c_type_size;
 
 typedef enum {
-  CHAR,
-  UCHAR,
-  INT,
   INT8,
   INT16,
   INT32,
   INT64,
-  UINT,
   UINT8,
   UINT16,
   UINT32,
   UINT64,
   FLOAT32,
   FLOAT64,
+  UFLOAT32,
+  UFLOAT64,
   STRUCT,
   UNION,
   POINTER,
+  FUNCTION,
   UNKNOWN,
 } c_type_id;
 
@@ -75,7 +73,6 @@ typedef struct {
   c_decl * data;
 } c_decl_array;
 
-
 c_decl make_pointer_decl(char *name, char *qual_type, c_type type);
 c_decl make_global_var_decl(char *name, c_type_id tid,
                           char *qual_type, qualifiers quals);
@@ -85,11 +82,22 @@ c_type make_pointer_type(c_type type, qualifiers quals);
 c_type make_composite_c_type(c_type_id tid, unsigned int field_length,
                            c_type *fields, qualifiers quals);
 
-c_type_id c_type_get_id(c_type *t);
-c_type_size c_type_get_size(c_type *t);
-c_type *c_type_get_fields(c_type *t);
-unsigned int c_type_get_field_length(c_type *t);
+inline c_type_id c_type_get_id(c_type *t) {
+  return t->data.composite.id;
+}
+
+inline c_type_size c_type_get_size(c_type *t) {
+  return t->type_size;
+}
+
+inline unsigned int c_type_get_field_length(c_type *t) {
+  return t->data.composite.field_length;
+}
+
 #define c_type_pointer_deref c_type_get_fields
+inline c_type *c_type_get_fields(c_type *t) {
+  return t->data.composite.fields;
+}
 
 const char* c_type_get_size_str(c_type s);
 const char* decl_type_get_str(c_decl d);

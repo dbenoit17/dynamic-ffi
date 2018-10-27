@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <set>
-#include <iostream>
 
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"

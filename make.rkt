@@ -57,9 +57,9 @@
   (format-append cc "-v" plugin-src (get-llvm-config)
    lflags+= "-o" out-path cxxflags+= ldflags+=))
  (unless (system make-plugin-cmd)
-   (error "dynamic-ffi: could not compile shared library"))
+   (error "header-parse: could not compile shared library"))
  out-path)
 
 (define (post-installer x)
-  (make-ffi-shared-lib dynamic-ffi.cc dynamic-ffi.so))
+  (make-ffi-shared-lib header-parse.cc header-parse.so))
 
