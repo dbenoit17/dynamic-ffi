@@ -60,8 +60,23 @@
    (error "header-parse: could not compile shared library"))
  out-path)
 
+(define (make-native-libs)
+  (define cwd (current-directory))
+  (current-directory shared-object-dir)
+  (printf "~a" dynamic-ffi.c)
+  (system (format "raco ctool --xform ~a" dynamic-ffi.c))
+  (printf "making object\n")
+  (system (format "raco ctool --3m --cc ~a" dynamic-ffi.3m.c))
+  (printf "making extension\n")
+  (system (format "raco ctool --3m --ld ~a ~a ~a"
+            dynamic-ffi-core_rkt.so dynamic-ffi_3m.o header-parse.so))
+  (current-directory cwd))
+
 (define (post-installer x)
-  (make-ffi-shared-lib header-parse.cc header-parse.so))
+  (unless (directory-exists? dynamic-extension-dir)
+    (make-directory* dynamic-extension-dir))
+  (make-ffi-shared-lib header-parse.cc header-parse.so)
+  (make-native-libs))
 
 (module+ main
   (post-installer #t))
