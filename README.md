@@ -1,6 +1,8 @@
 dynamic-ffi
 ===========
 
+This package is not yet ready for general use.
+
 Uses clang to parse metadata from C files into racket.
 
 To install the package:
@@ -50,7 +52,7 @@ are also parsed.
 
 ;; Gets function declarations and 
 ;; prints them as strings for now
-(dynamic-ffi-run "example.c")
+(dynamic-ffi-parse "example.c")
 ```
 
 # TODO

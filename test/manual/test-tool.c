@@ -1,4 +1,5 @@
-#include "../../ffi/header-parse.h"
+#include <stdio.h>
+#include "../../core/header-parse.h"
 
 int main(int argc, const char **argv) {
   c_decl_array decls = ffi_parse(argc, argv);

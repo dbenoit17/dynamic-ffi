@@ -57,7 +57,7 @@ void struct_##NAME##_init(Scheme_Env * env) { \
 #define INITIALIZE_STRUCT(NAME,E) struct_##NAME##_init((E));
 
 const int struct_flags = SCHEME_STRUCT_NO_MAKE_PREFIX;
-Scheme_Object *dynamic_ffi_parse();
+Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object ** argv);
 Scheme_Object *make_decl_instance(c_decl *decl);
 char *dashify(const char *str);
 
@@ -97,8 +97,11 @@ DEFINE_STRUCT_INITIALIZER(ctype_function, ctype_composite, 0);
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
   Scheme_Env *mod_env;
   Scheme_Object * result;
+  Scheme_Object * parse_prim;
 
   mod_env = scheme_primitive_module(scheme_intern_symbol("dynamic-ffi-core"), env);
+
+  parse_prim = scheme_make_prim_w_arity(dynamic_ffi_parse, "dynamic-ffi-parse", 1, -1);
 
   //scheme_debug_print(scheme_make_utf8_string("parsing complete\n"));
 
@@ -125,8 +128,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   INITIALIZE_STRUCT(ctype_pointer, mod_env);
   INITIALIZE_STRUCT(ctype_function, mod_env);
 
-  result = dynamic_ffi_parse();
-  scheme_add_global("dynamic-ffi-data", result, mod_env);
+  scheme_add_global("dynamic-ffi-parse", parse_prim, mod_env);
 
   scheme_finish_primitive_module(mod_env);
   return scheme_void;
@@ -140,18 +142,36 @@ Scheme_Object *scheme_module_name() {
   return scheme_intern_symbol("dynamic-ffi-core");
 }
 
-Scheme_Object *dynamic_ffi_parse() {
+Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object **scheme_argv) {
   Scheme_Object *declarations;
-  const int argc = 2;
-  const char *argv[2];
+  char **argv;
   int i;
   c_decl_array decls;
 
-  declarations = EMPTY_LIST();
-  argv[0] = "dummy";
-  argv[1] = "/home/dbenoit/Documents/adqc-ffi/dynamic-ffi/test/test-prg.c";
+  argv = malloc(sizeof(char*) * (argc + 1));
 
-  decls = ffi_parse(argc, argv);
+  argv[0] = "dynamic-ffi-parse";
+
+  for (i = 0; i < argc; i++) {
+    unsigned int length, j;
+    mzchar* temp;
+    temp = SCHEME_CHAR_STR_VAL(scheme_argv[i]);
+    length = SCHEME_CHAR_STRLEN_VAL(scheme_argv[i]);
+    argv[i+1] = malloc(sizeof(char) * (length + 1));
+    for (j = 0; j < length; j++) {
+       mzchar mz;
+       mz = temp[j];
+       if (mz >= 256) {
+         printf("only ascii paths supported currently");
+       }
+       argv[i+1][j] = (char) mz;
+    }
+    argv[i+1][j] = '\0';
+  }
+
+  declarations = EMPTY_LIST();
+
+  decls = ffi_parse(argc + 1, argv);
 
   for (i = 0; i < decls.length; ++i) {
     Scheme_Object *decl_scheme;
@@ -162,16 +182,21 @@ Scheme_Object *dynamic_ffi_parse() {
   }
 
   free_decl_array(decls);
+  for (i = 0; i < argc; ++i) {
+    free(argv[i+1]);
+  }
+  free(argv);
   return declarations;
 }
 
-Scheme_Object * make_atomic_ctype_instance(c_type * t) {
-  Scheme_Object * new_ctype;
+
+Scheme_Object *make_atomic_ctype_instance(c_type *t) {
+  Scheme_Object *new_ctype;
   Scheme_Object *argv[3];
   const char * s;
 
   s = c_type_get_str(*t);
-  printf("%s\n", s);
+  // make bools
   argv[0] = scheme_make_utf8_string(s);
   argv[1] = scheme_make_utf8_string(s);
   argv[2] = scheme_make_utf8_string(s);
