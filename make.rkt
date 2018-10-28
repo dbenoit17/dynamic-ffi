@@ -63,3 +63,6 @@
 (define (post-installer x)
   (make-ffi-shared-lib header-parse.cc header-parse.so))
 
+(module+ main
+  (post-installer #t))
+

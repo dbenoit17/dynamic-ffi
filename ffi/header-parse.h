@@ -26,6 +26,7 @@ typedef enum {
   FLOAT64,
   UFLOAT32,
   UFLOAT64,
+
   STRUCT,
   UNION,
   POINTER,
@@ -51,6 +52,7 @@ typedef struct c_type {
   union {
     struct {
       c_type_id id;
+      qualifiers quals;
     } atomic;
     struct {
       c_type_id id;
@@ -58,7 +60,6 @@ typedef struct c_type {
       unsigned int field_length;
     } composite;
   } data;
-  qualifiers quals;
 } c_type;
 
 typedef struct {
@@ -78,9 +79,9 @@ c_decl make_global_var_decl(char *name, c_type_id tid,
                           char *qual_type, qualifiers quals);
 
 c_type make_atomic_c_type(c_type_id tid, qualifiers quals);
-c_type make_pointer_type(c_type type, qualifiers quals);
+c_type make_pointer_type(c_type type);
 c_type make_composite_c_type(c_type_id tid, unsigned int field_length,
-                           c_type *fields, qualifiers quals);
+                           c_type *fields);
 
 inline c_type_id c_type_get_id(c_type *t) {
   return t->data.composite.id;

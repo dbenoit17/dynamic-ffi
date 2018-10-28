@@ -2,15 +2,28 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+
 #include "escheme.h"
 #include "header-parse.h"
 
+/*
+   DEFINE_STRUCT_INITIALIZER(...)
+   Create an initializer for a racket struct;
+   NAME: id
+   SUPER: id of parent
+   NUM_FIELDS: int
+   FIELDS ...: const char*
+*/
 #define DEFINE_STRUCT_INITIALIZER(NAME, SUPER, NUM_FIELDS, FIELDS ...) \
 const char* struct_##NAME##_fields[NUM_FIELDS] = {FIELDS}; \
 Scheme_Object * NAME; \
 void struct_##NAME##_init(Scheme_Env * env) { \
   Scheme_Object *lst; \
   Scheme_Object *name_symbol; \
+  Scheme_Object *properties; \
   Scheme_Object **struct_names; \
   Scheme_Object **struct_values; \
   Scheme_Object* struct_names_array[NUM_FIELDS]; \
@@ -26,8 +39,8 @@ void struct_##NAME##_init(Scheme_Env * env) { \
       scheme_intern_symbol(struct_##NAME##_fields[i]); \
   } \
 \
-  NAME = scheme_make_struct_type(name_symbol, SUPER, NULL, NUM_FIELDS, 0, NULL, \
-      scheme_build_list(0,NULL), NULL); \
+  lst = EMPTY_LIST(); \
+  NAME = scheme_make_struct_type(name_symbol, SUPER, NULL, NUM_FIELDS, 0, NULL, lst, NULL); \
   lst = scheme_build_list(NUM_FIELDS, struct_names_array); \
   struct_names = \
      scheme_make_struct_names(name_symbol, lst, struct_flags, &count); \
@@ -43,42 +56,37 @@ void struct_##NAME##_init(Scheme_Env * env) { \
 
 #define INITIALIZE_STRUCT(NAME,E) struct_##NAME##_init((E));
 
-const int struct_flags = SCHEME_STRUCT_NO_MAKE_PREFIX; 
+const int struct_flags = SCHEME_STRUCT_NO_MAKE_PREFIX;
 Scheme_Object *dynamic_ffi_parse();
+Scheme_Object *make_decl_instance(c_decl *decl);
 char *dashify(const char *str);
 
-DEFINE_STRUCT_INITIALIZER(declaration, NULL, 3, "name", "type", "type-string");
+static inline Scheme_Object *CONS(Scheme_Object *car, Scheme_Object *cdr) {
+  return scheme_make_pair(car, cdr);
+}
+
+static inline Scheme_Object *EMPTY_LIST() {
+  return scheme_build_list(0,NULL);
+}
+
+DEFINE_STRUCT_INITIALIZER(declaration, NULL, 3,
+                          "name", "type", "type-string");
 DEFINE_STRUCT_INITIALIZER(func_decl, declaration, 0);
 DEFINE_STRUCT_INITIALIZER(var_decl, declaration, 0);
 DEFINE_STRUCT_INITIALIZER(struct_decl, declaration, 0);
 DEFINE_STRUCT_INITIALIZER(union_decl, declaration, 0);
 
 DEFINE_STRUCT_INITIALIZER(ctype, NULL, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_atomic, ctype, 0);
+DEFINE_STRUCT_INITIALIZER(ctype_atomic, ctype, 3,
+                          "const?", "volatile?", "restrict?");
 
-DEFINE_STRUCT_INITIALIZER(ctype_int, ctype, 0);
-
+DEFINE_STRUCT_INITIALIZER(ctype_int, ctype_atomic, 1, "width");
 DEFINE_STRUCT_INITIALIZER(ctype_signed_int, ctype_int, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_int8,  ctype_signed_int, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_int16, ctype_signed_int, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_int32, ctype_signed_int, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_int64, ctype_signed_int, 0);
-
 DEFINE_STRUCT_INITIALIZER(ctype_unsigned_int, ctype_int, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_uint8,  ctype_unsigned_int, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_uint16, ctype_unsigned_int, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_uint32, ctype_unsigned_int, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_uint64, ctype_unsigned_int, 0);
 
-DEFINE_STRUCT_INITIALIZER(ctype_float, ctype, 0);
-
+DEFINE_STRUCT_INITIALIZER(ctype_float, ctype_atomic, 1, "width");
 DEFINE_STRUCT_INITIALIZER(ctype_signed_float, ctype_float, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_float32, ctype_signed_float, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_float64, ctype_signed_float, 0);
-
 DEFINE_STRUCT_INITIALIZER(ctype_unsigned_float, ctype_float, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_ufloat32, ctype_unsigned_float, 0);
-DEFINE_STRUCT_INITIALIZER(ctype_ufloat64, ctype_unsigned_float, 0);
 
 DEFINE_STRUCT_INITIALIZER(ctype_composite, ctype, 0);
 DEFINE_STRUCT_INITIALIZER(ctype_struct, ctype_composite, 0);
@@ -88,11 +96,10 @@ DEFINE_STRUCT_INITIALIZER(ctype_function, ctype_composite, 0);
 
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
   Scheme_Env *mod_env;
-  Scheme_Object * result; 
+  Scheme_Object * result;
 
   mod_env = scheme_primitive_module(scheme_intern_symbol("dynamic-ffi-core"), env);
 
-  //result = dynamic_ffi_parse();
   //scheme_debug_print(scheme_make_utf8_string("parsing complete\n"));
 
   INITIALIZE_STRUCT(declaration, mod_env);
@@ -103,38 +110,24 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   INITIALIZE_STRUCT(ctype, mod_env);
   INITIALIZE_STRUCT(ctype_atomic, mod_env);
-  
+
   INITIALIZE_STRUCT(ctype_int, mod_env);
-  
   INITIALIZE_STRUCT(ctype_signed_int, mod_env);
-  INITIALIZE_STRUCT(ctype_int8,  mod_env);
-  INITIALIZE_STRUCT(ctype_int16, mod_env);
-  INITIALIZE_STRUCT(ctype_int32, mod_env);
-  INITIALIZE_STRUCT(ctype_int64, mod_env);
-  
   INITIALIZE_STRUCT(ctype_unsigned_int, mod_env);
-  INITIALIZE_STRUCT(ctype_uint8,  mod_env);
-  INITIALIZE_STRUCT(ctype_uint16, mod_env);
-  INITIALIZE_STRUCT(ctype_uint32, mod_env);
-  INITIALIZE_STRUCT(ctype_uint64, mod_env);
-  
+
   INITIALIZE_STRUCT(ctype_float, mod_env);
-  
   INITIALIZE_STRUCT(ctype_signed_float, mod_env);
-  INITIALIZE_STRUCT(ctype_float32, mod_env);
-  INITIALIZE_STRUCT(ctype_float64, mod_env);
-  
   INITIALIZE_STRUCT(ctype_unsigned_float, mod_env);
-  INITIALIZE_STRUCT(ctype_ufloat32, mod_env);
-  INITIALIZE_STRUCT(ctype_ufloat64, mod_env);
-  
-  
+
   INITIALIZE_STRUCT(ctype_composite, mod_env);
   INITIALIZE_STRUCT(ctype_struct, mod_env);
   INITIALIZE_STRUCT(ctype_union, mod_env);
   INITIALIZE_STRUCT(ctype_pointer, mod_env);
   INITIALIZE_STRUCT(ctype_function, mod_env);
-    
+
+  result = dynamic_ffi_parse();
+  scheme_add_global("dynamic-ffi-data", result, mod_env);
+
   scheme_finish_primitive_module(mod_env);
   return scheme_void;
 }
@@ -148,17 +141,58 @@ Scheme_Object *scheme_module_name() {
 }
 
 Scheme_Object *dynamic_ffi_parse() {
+  Scheme_Object *declarations;
   const int argc = 2;
-  const char *argv[2]; 
+  const char *argv[2];
   int i;
   c_decl_array decls;
 
-  argv[0] = "dummy"; 
+  declarations = EMPTY_LIST();
+  argv[0] = "dummy";
   argv[1] = "/home/dbenoit/Documents/adqc-ffi/dynamic-ffi/test/test-prg.c";
+
   decls = ffi_parse(argc, argv);
+
+  for (i = 0; i < decls.length; ++i) {
+    Scheme_Object *decl_scheme;
+    c_decl* d;
+    d  = decls.data + i;
+    decl_scheme = make_decl_instance(d);
+    declarations = CONS(decl_scheme, declarations);
+  }
+
   free_decl_array(decls);
-  
-  return scheme_make_utf8_string("done");
+  return declarations;
+}
+
+Scheme_Object * make_atomic_ctype_instance(c_type * t) {
+  Scheme_Object * new_ctype;
+  Scheme_Object *argv[3];
+  const char * s;
+
+  s = c_type_get_str(*t);
+  printf("%s\n", s);
+  argv[0] = scheme_make_utf8_string(s);
+  argv[1] = scheme_make_utf8_string(s);
+  argv[2] = scheme_make_utf8_string(s);
+
+  new_ctype = scheme_make_struct_instance(ctype_atomic, 3, argv);
+  return new_ctype;
+
+}
+
+Scheme_Object *make_decl_instance(c_decl *decl) {
+  Scheme_Object * new_declaration;
+  Scheme_Object * argv[3];
+  Scheme_Object * type;
+
+  argv[0] = scheme_make_utf8_string(decl->name);
+  argv[1] = make_atomic_ctype_instance(&(decl->type_info));
+  argv[2] = scheme_make_utf8_string(decl->qual_type);
+
+  new_declaration =
+    scheme_make_struct_instance(declaration, 3, argv);
+  return new_declaration;
 }
 
 char * dashify(const char* str) {
@@ -180,3 +214,4 @@ char * dashify(const char* str) {
 
 #undef DEFINE_STRUCT_INITIALIZER
 #undef INITIALIZE_STRUCT
+

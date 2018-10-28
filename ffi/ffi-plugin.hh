@@ -85,24 +85,25 @@ public:
      strcpy(name, cxx_name.c_str());
      strcpy(type_name, cxx_type.c_str());
 
-     qualifiers quals = get_quals(type);
 
      c_decl decl;
      if (type->isPointerType()) {
        decl = make_pointer_decl(name, type_name,
-                  make_pointer_type(get_pointee_type(type), quals));
+                  make_pointer_type(get_pointee_type(type)));
      } else {
+       qualifiers quals = get_quals(type);
        decl = make_global_var_decl(name, UNKNOWN, type_name, quals);
      }
      return decl;
   }
   c_type get_pointee_type(QualType type) {
-    qualifiers quals = get_quals(type);
     if (type->isPointerType()) {
       QualType pointee = type->getPointeeType();
-      return make_pointer_type(get_pointee_type(pointee), quals);
+      return make_pointer_type(get_pointee_type(pointee));
+    } else {
+      qualifiers quals = get_quals(type);
+      return make_atomic_c_type(UNKNOWN, quals);
     }
-    return make_atomic_c_type(UNKNOWN, quals);
   }
 };
 

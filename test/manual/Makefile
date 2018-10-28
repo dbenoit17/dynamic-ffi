@@ -11,9 +11,9 @@ CXXFLAGS += -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS \
 	    -fno-rtti -std=c++11 -Wall
 
 TEST_SRC = test-prg.c
-HEADER_PARSE_CC_SRC=../ffi/header-parse.cc
+HEADER_PARSE_CC_SRC=../../ffi/header-parse.cc
 HEADER_PARSE_CC_O=./header-parse.cc.so
-HEADER_PARSE_C_SRC=../ffi/header-parse.c
+HEADER_PARSE_C_SRC=../../ffi/header-parse.c
 HEADER_PARSE_C_O=./header-parse.c.so
 
 

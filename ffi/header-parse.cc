@@ -70,29 +70,27 @@ c_type make_atomic_c_type(c_type_id tid, qualifiers quals) {
   c_type t;
   t.type_size = ATOMIC;
   t.data.atomic.id = tid;
-  t.quals = quals;
+  t.data.atomic.quals = quals;
   return  t;
 }
 
 c_type make_composite_c_type(c_type_id tid, unsigned int field_length,
-                           c_type *fields, qualifiers quals) {
+                           c_type *fields) {
   c_type t;
   t.type_size = COMPOSITE;
   t.data.composite.id = tid;
   t.data.composite.fields = fields;
   t.data.composite.field_length = field_length;
-  t.quals = quals;
   return  t;
 }
 
-c_type make_pointer_type(c_type type, qualifiers quals) {
+c_type make_pointer_type(c_type type) {
   c_type t;
   t.type_size = COMPOSITE;
   t.data.composite.id = POINTER;
   t.data.composite.fields = (c_type*) malloc(sizeof(c_type));
   memcpy(t.data.composite.fields, &type, sizeof(c_type));
   t.data.composite.field_length = 1;
-  t.quals = quals;
   return t;
 }
 
@@ -152,9 +150,6 @@ const char* decl_type_get_str(c_decl d) {
 
 const char* c_type_get_str(c_type s) {
   switch (s.data.atomic.id) {
-  case INT:
-    return "INT";
-    break;
   case INT16:
     return "INT16";
     break;
@@ -163,9 +158,6 @@ const char* c_type_get_str(c_type s) {
     break;
   case INT64:
     return "INT64";
-    break;
-  case UINT:
-    return "UINT";
     break;
   case UINT16:
     return "UINT16";
