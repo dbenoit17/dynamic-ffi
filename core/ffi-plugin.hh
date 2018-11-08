@@ -13,10 +13,15 @@
 #include "clang/Frontend/FrontendActions.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "clang/Frontend/FrontendActions.h"
+#include "clang/Tooling/CommonOptionsParser.h"
+#include "clang/Tooling/Tooling.h"
+
 #include "header-parse.h"
 
-using namespace clang;
 using namespace clang::tooling;
+using namespace clang;
+using namespace llvm;
 
 /* begin plugin namespace */
 namespace ffi {
@@ -46,65 +51,14 @@ public:
   ffiASTConsumer(ffiAccumulator &accumulator,
      CompilerInstance &compiler, bool deep_parse)
    : accumulator(accumulator), compiler(compiler), deep_parse(deep_parse) {}
-  /* overrideable handler methods
-     https://clang.llvm.org/doxygen/classclang_1_1ASTConsumer.html
-   */
-  bool HandleTopLevelDecl(DeclGroupRef decls) override {
-    for (DeclGroupRef::iterator i = decls.begin(),
-         e = decls.end(); i != e; i++) {
-      if (deep_parse || topLevelHeaderContains(*i)) {
-        if (const VarDecl  *var_decl = dyn_cast<VarDecl>((Decl*) *i)) {
-          c_decl d = make_global_var(var_decl);
-          accumulator.push_decl(d);
-        }
-      }
-    }
-    return true;
-  }
-  bool topLevelHeaderContains(Decl *d) {
-    std::string filename =
-      compiler.getSourceManager().getFilename(d->getLocation()).str();
-    return accumulator.sources.count(filename);
-  }
+  bool HandleTopLevelDecl(DeclGroupRef decls) override;
+  bool topLevelHeaderContains(Decl *d);
+  qualifiers get_quals(QualType type);
+  c_decl make_global_var(const VarDecl *d);
+  c_type get_pointee_type(QualType type);
 
-  qualifiers get_quals(QualType type) {
-    qualifiers quals;
-    quals.is_const = type.isConstQualified();
-    quals.is_volatile = type.isVolatileQualified();
-    quals.is_restrict = type.isRestrictQualified();
-    return quals;
-  }
-
-  c_decl make_global_var(const VarDecl *d) {
-     QualType type = d->getType();
-
-     std::string cxx_name = d->getNameAsString();
-     std::string cxx_type = type.getAsString();
-     char *name = (char*) malloc(sizeof(char*) * (cxx_name.length() + 1));
-     char *type_name = (char*) malloc(sizeof(char*) * (cxx_type.length() + 1));
-     strcpy(name, cxx_name.c_str());
-     strcpy(type_name, cxx_type.c_str());
-
-
-     c_decl decl;
-     if (type->isPointerType()) {
-       decl = make_pointer_decl(name, type_name,
-                  make_pointer_type(get_pointee_type(type)));
-     } else {
-       qualifiers quals = get_quals(type);
-       decl = make_global_var_decl(name, UNKNOWN, type_name, quals);
-     }
-     return decl;
-  }
-  c_type get_pointee_type(QualType type) {
-    if (type->isPointerType()) {
-      QualType pointee = type->getPointeeType();
-      return make_pointer_type(get_pointee_type(pointee));
-    } else {
-      qualifiers quals = get_quals(type);
-      return make_atomic_c_type(UNKNOWN, quals);
-    }
-  }
+  c_type_id get_c_type_id(QualType type);
+  c_type dispatch_on_type(QualType qual_type);
 };
 
 class ffiPluginAction : public ASTFrontendAction {

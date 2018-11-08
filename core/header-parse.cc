@@ -1,3 +1,15 @@
+#include <string>
+#include <vector>
+#include <set>
+
+#include "clang/AST/AST.h"
+#include "clang/AST/ASTConsumer.h"
+#include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/Frontend/FrontendPluginRegistry.h"
+#include "clang/Frontend/CompilerInstance.h"
+#include "clang/Frontend/FrontendActions.h"
+#include "llvm/Support/raw_ostream.h"
+
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
@@ -66,41 +78,41 @@ c_decl_array ffi_deep_parse(int argc, const char **argv) {
   return dynamic_ffi_parse(argc, argv, true);
 }
 
-c_type make_atomic_c_type(c_type_id tid, qualifiers quals) {
+c_type make_simple_c_type(c_type_id tid, unsigned int width, qualifiers quals) {
   c_type t;
   t.type_size = ATOMIC;
-  t.data.atomic.id = tid;
-  t.data.atomic.quals = quals;
+  t.data.simple.id = tid;
+  t.quals = quals;
+  t.width = width;
   return  t;
 }
 
-c_type make_composite_c_type(c_type_id tid, unsigned int field_length,
-                           c_type *fields) {
+c_type make_compound_c_type(c_type_id tid, unsigned int width, qualifiers quals,
+                            unsigned int field_length, c_type *fields) {
   c_type t;
   t.type_size = COMPOSITE;
-  t.data.composite.id = tid;
-  t.data.composite.fields = fields;
-  t.data.composite.field_length = field_length;
+  t.data.compound.id = tid;
+  t.data.compound.fields = fields;
+  t.data.compound.field_length = field_length;
   return  t;
 }
 
 c_type make_pointer_type(c_type type) {
   c_type t;
   t.type_size = COMPOSITE;
-  t.data.composite.id = POINTER;
-  t.data.composite.fields = (c_type*) malloc(sizeof(c_type));
-  memcpy(t.data.composite.fields, &type, sizeof(c_type));
-  t.data.composite.field_length = 1;
+  t.data.compound.id = POINTER;
+  t.data.compound.fields = (c_type*) malloc(sizeof(c_type));
+  memcpy(t.data.compound.fields, &type, sizeof(c_type));
+  t.data.compound.field_length = 1;
   return t;
 }
 
-c_decl make_global_var_decl(char *name, c_type_id tid,
-                          char *qual_type,
-                          qualifiers quals) {
+c_decl make_global_var_decl(char *name, c_type_id tid, unsigned int width,
+                            qualifiers quals, char *qual_type) {
   c_decl d;
   d.name = name;
   d.decl_type = GLOBAL_VAR_DECL;
-  d.type_info = make_atomic_c_type(tid, quals);
+  d.type_info = make_simple_c_type(tid, 32, quals);
   d.qual_type = qual_type;
   return d;
 }
@@ -149,39 +161,27 @@ const char* decl_type_get_str(c_decl d) {
 }
 
 const char* c_type_get_str(c_type s) {
-  switch (s.data.atomic.id) {
-  case INT16:
-    return "INT16";
+  switch (s.data.simple.id) {
+  case INT:
+    return "int";
     break;
-  case INT32:
-    return "INT32";
-    break;
-  case INT64:
-    return "INT64";
-    break;
-  case UINT16:
-    return "UINT16";
-    break;
-  case UINT32:
-    return "UINT32";
-    break;
-  case UINT64:
-    return "UINT64";
+  case UINT:
+    return "uint";
     break;
   case STRUCT:
-    return "STRUCT";
+    return "struct";
     break;
   case UNION:
-    return "UNION";
+    return "union";
     break;
   case POINTER:
-    return "POINTER";
+    return "pointer";
     break;
   case UNKNOWN:
-    return "UNKNOWN";
+    return "uknown";
     break;
   default:
-    printf("unknown c_type");
+    printf("invalid c_type");
     exit(0);
   }
 }

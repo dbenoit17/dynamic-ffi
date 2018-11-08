@@ -14,23 +14,18 @@ typedef enum {
 } c_type_size;
 
 typedef enum {
-  INT8,
-  INT16,
-  INT32,
-  INT64,
-  UINT8,
-  UINT16,
-  UINT32,
-  UINT64,
-  FLOAT32,
-  FLOAT64,
-  UFLOAT32,
-  UFLOAT64,
-
+  CHAR,
+  UCHAR,
+  INT,
+  UINT,
+  FLOAT,
+  UFLOAT,
+  ENUM,
   STRUCT,
   UNION,
   POINTER,
   FUNCTION,
+  TYPEDEF,
   UNKNOWN,
 } c_type_id;
 
@@ -39,6 +34,7 @@ typedef enum {
   GLOBAL_VAR_DECL,
   STRUCT_DECL,
   UNION_DECL,
+  TYPEDEF_DECL
 } c_decl_id;
 
 typedef struct {
@@ -49,16 +45,17 @@ typedef struct {
 
 typedef struct c_type {
   c_type_size type_size;
+  unsigned int width;
+  qualifiers quals;
   union {
     struct {
       c_type_id id;
-      qualifiers quals;
-    } atomic;
+    } simple;
     struct {
       c_type_id id;
-      struct c_type *fields;
       unsigned int field_length;
-    } composite;
+      struct c_type *fields;
+    } compound;
   } data;
 } c_type;
 
@@ -75,16 +72,17 @@ typedef struct {
 } c_decl_array;
 
 c_decl make_pointer_decl(char *name, char *qual_type, c_type type);
-c_decl make_global_var_decl(char *name, c_type_id tid,
-                          char *qual_type, qualifiers quals);
 
-c_type make_atomic_c_type(c_type_id tid, qualifiers quals);
+c_decl make_global_var_decl(char *name, c_type_id tid, unsigned int width,
+                            qualifiers quals, char *qual_type);
+
+c_type make_simple_c_type(c_type_id tid, unsigned int width, qualifiers quals);
 c_type make_pointer_type(c_type type);
-c_type make_composite_c_type(c_type_id tid, unsigned int field_length,
-                           c_type *fields);
+c_type make_compound_c_type(c_type_id tid, unsigned int width, qualifiers quals,
+                            unsigned int field_length, c_type *fields);
 
 inline c_type_id c_type_get_id(c_type *t) {
-  return t->data.composite.id;
+  return t->data.compound.id;
 }
 
 inline c_type_size c_type_get_size(c_type *t) {
@@ -92,18 +90,17 @@ inline c_type_size c_type_get_size(c_type *t) {
 }
 
 inline unsigned int c_type_get_field_length(c_type *t) {
-  return t->data.composite.field_length;
+  return t->data.compound.field_length;
 }
 
 #define c_type_pointer_deref c_type_get_fields
 inline c_type *c_type_get_fields(c_type *t) {
-  return t->data.composite.fields;
+  return t->data.compound.fields;
 }
 
 const char* c_type_get_size_str(c_type s);
 const char* decl_type_get_str(c_decl d);
 const char* c_type_get_str(c_type s);
-
 
 void free_decl_array(c_decl_array a);
 void c_type_free_field(c_type *t);

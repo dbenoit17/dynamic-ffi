@@ -52,13 +52,13 @@
    (build-list (length a) (λ (x) "~a"))))
  (apply format (cons fmt a)))
 
-(define (make-ffi-shared-lib plugin-src out-path)
- (define make-plugin-cmd
-  (format-append cc "-v" plugin-src (get-llvm-config)
-   lflags+= "-o" out-path cxxflags+= ldflags+=))
- (unless (system make-plugin-cmd)
-   (error "header-parse: could not compile shared library"))
- out-path)
+(define-syntax-rule (make-ffi-shared-lib out-path in ...)
+ (let ([make-plugin-cmd
+        (format-append cc "-v" in ... (get-llvm-config)
+          lflags+= "-o" out-path cxxflags+= ldflags+=)])
+   (unless (system make-plugin-cmd)
+     (error "header-parse: could not compile shared library"))
+   out-path))
 
 (define (make-native-libs)
   (define cwd (current-directory))
@@ -75,7 +75,8 @@
 (define (post-installer x)
   (unless (directory-exists? dynamic-extension-dir)
     (make-directory* dynamic-extension-dir))
-  (make-ffi-shared-lib header-parse.cc header-parse.so)
+  (make-ffi-shared-lib ffi-plugin.so ffi-plugin.cc)
+  (make-ffi-shared-lib header-parse.so header-parse.cc ffi-plugin.so)
   (make-native-libs))
 
 (module+ main
