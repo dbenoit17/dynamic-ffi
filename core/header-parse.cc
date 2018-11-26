@@ -78,70 +78,8 @@ c_decl_array ffi_deep_parse(int argc, const char **argv) {
   return dynamic_ffi_parse(argc, argv, true);
 }
 
-c_type make_simple_c_type(c_type_id tid, unsigned int width, qualifiers quals) {
-  c_type t;
-  t.type_size = ATOMIC;
-  t.data.simple.id = tid;
-  t.quals = quals;
-  t.width = width;
-  return  t;
-}
-
-c_type make_compound_c_type(c_type_id tid, unsigned int width, qualifiers quals,
-                            unsigned int field_length, c_type *fields) {
-  c_type t;
-  t.type_size = COMPOSITE;
-  t.data.compound.id = tid;
-  t.data.compound.fields = fields;
-  t.data.compound.field_length = field_length;
-  return  t;
-}
-
-c_type make_pointer_type(c_type type) {
-  c_type t;
-  t.type_size = COMPOSITE;
-  t.data.compound.id = POINTER;
-  t.data.compound.fields = (c_type*) malloc(sizeof(c_type));
-  memcpy(t.data.compound.fields, &type, sizeof(c_type));
-  t.data.compound.field_length = 1;
-  return t;
-}
-
-c_decl make_global_var_decl(char *name, c_type_id tid, unsigned int width,
-                            qualifiers quals, char *qual_type) {
-  c_decl d;
-  d.name = name;
-  d.decl_type = GLOBAL_VAR_DECL;
-  d.type_info = make_simple_c_type(tid, 32, quals);
-  d.qual_type = qual_type;
-  return d;
-}
-
-c_decl make_pointer_decl(char *name, char *qual_type, c_type type) {
-  c_decl d;
-  d.name = name;
-  d.decl_type = GLOBAL_VAR_DECL;
-  d.type_info = type;
-  d.qual_type = qual_type;
-  return d;
-}
-
-const char* c_type_get_size_str(c_type s) {
-  switch (s.type_size) {
-  case ATOMIC:
-    return "ATOMIC";
-    break;
-  case COMPOSITE:
-    return "COMPOSITE";
-    break;
-    default:
-      printf("unknown type_size c_type");
-      exit(0);
-  }
-}
-
 const char* decl_type_get_str(c_decl d) {
-  switch (d.decl_type) {
+  switch (d.base) {
     case FUNCTION_DECL:
       return "FUNCTION_DECL";
       break;
@@ -161,12 +99,10 @@ const char* decl_type_get_str(c_decl d) {
 }
 
 const char* c_type_get_str(c_type s) {
-  switch (s.data.simple.id) {
-  case INT:
+  switch (s.base) {
+  case INTEGER:
     return "int";
     break;
-  case UINT:
-    return "uint";
     break;
   case STRUCT:
     return "struct";
@@ -178,31 +114,29 @@ const char* c_type_get_str(c_type s) {
     return "pointer";
     break;
   case UNKNOWN:
+  default:
     return "uknown";
     break;
-  default:
-    printf("invalid c_type");
-    exit(0);
   }
 }
 
-void c_type_free_field(c_type *t) {
-  if (c_type_get_size(t) == COMPOSITE) {
-    c_type *fields = c_type_get_fields(t);
-    unsigned int length = c_type_get_field_length(t);
+void c_type_free_fields(c_type *t) {
+  if (t->has_fields) {
+    c_type *fields = t->fields;
+    unsigned int length = t->field_length;;
     unsigned int i;
     for (i = 0; i < length; ++i) {
-      c_type_free_field(&(fields[i]));
+      c_type_free_fields(&(fields[i]));
     }
     free(fields);
   }
 }
 
 void free_decl(c_decl d) {
-  c_type * t = &(d.type_info);
+  c_type * t = &(d.ctype);
   free(d.name);
-  free(d.qual_type);
-  c_type_free_field(t);
+  free(d.type_str);
+  c_type_free_fields(t);
 }
 
 void free_decl_array(c_decl_array a) {
@@ -211,7 +145,6 @@ void free_decl_array(c_decl_array a) {
     free_decl(a.data[i]);
   }
   free(a.data);
-
 }
 
 void string_append(char **dest, const char *src,
@@ -230,7 +163,7 @@ void string_append(char **dest, const char *src,
 }
 
 char* format_decl(c_decl d) {
-  c_type *t = &(d.type_info);
+  c_type *t = &(d.ctype);
   unsigned int size = 512;
   unsigned int length = 0;
   char *buffer = (char*) malloc(sizeof(char) * size);
@@ -238,15 +171,13 @@ char* format_decl(c_decl d) {
   string_append(&buffer, decl_type_get_str(d), &length, &size);
   string_append(&buffer, "\n name: ", &length, &size);
   string_append(&buffer, d.name, &length, &size);
-  string_append(&buffer, "\n type_size: ", &length, &size);
-  string_append(&buffer, c_type_get_size_str(*t), &length, &size);
   string_append(&buffer, "\n type: ", &length, &size);
 
-  if (c_type_get_size(t) == ATOMIC) {
+  if (!t->has_fields) {
     string_append(&buffer, c_type_get_str(*t), &length, &size);
   }
-  while (c_type_get_size(t) == COMPOSITE) {
-    switch (c_type_get_id(t)) {
+  while (t->has_fields) {
+    switch (t->base) {
       case STRUCT:
         break;
       case UNION:
@@ -255,7 +186,7 @@ char* format_decl(c_decl d) {
         {
           int indirects = 0, i;
           t = c_type_pointer_deref(t);
-          while (c_type_get_id(t) == POINTER) {
+          while (t->base == POINTER) {
             ++indirects;
             t = c_type_pointer_deref(t);
           }

@@ -9,17 +9,8 @@ extern "C" {
 #endif
 
 typedef enum {
-  ATOMIC,
-  COMPOSITE
-} c_type_size;
-
-typedef enum {
-  CHAR,
-  UCHAR,
-  INT,
-  UINT,
+  INTEGER,
   FLOAT,
-  UFLOAT,
   ENUM,
   STRUCT,
   UNION,
@@ -37,33 +28,24 @@ typedef enum {
   TYPEDEF_DECL
 } c_decl_id;
 
-typedef struct {
+typedef struct c_type {
+  c_type_id base;
+  unsigned int width;
   int is_const;
   int is_volatile;
   int is_restrict;
-} qualifiers;
-
-typedef struct c_type {
-  c_type_size type_size;
-  unsigned int width;
-  qualifiers quals;
-  union {
-    struct {
-      c_type_id id;
-    } simple;
-    struct {
-      c_type_id id;
-      unsigned int field_length;
-      struct c_type *fields;
-    } compound;
-  } data;
+  int is_signed;
+  int is_literal;
+  int has_fields;
+  unsigned int field_length;
+  struct c_type *fields;
 } c_type;
 
 typedef struct {
   char *name;
-  c_decl_id decl_type;
-  c_type type_info;
-  char *qual_type;
+  c_decl_id base;
+  c_type ctype;
+  char *type_str;
 } c_decl;
 
 typedef struct {
@@ -71,32 +53,66 @@ typedef struct {
   c_decl * data;
 } c_decl_array;
 
-c_decl make_pointer_decl(char *name, char *qual_type, c_type type);
-
-c_decl make_global_var_decl(char *name, c_type_id tid, unsigned int width,
-                            qualifiers quals, char *qual_type);
-
-c_type make_simple_c_type(c_type_id tid, unsigned int width, qualifiers quals);
-c_type make_pointer_type(c_type type);
-c_type make_compound_c_type(c_type_id tid, unsigned int width, qualifiers quals,
-                            unsigned int field_length, c_type *fields);
-
-inline c_type_id c_type_get_id(c_type *t) {
-  return t->data.compound.id;
+inline c_type *c_type_pointer_deref(c_type *t) {
+  return t->fields;
 }
 
-inline c_type_size c_type_get_size(c_type *t) {
-  return t->type_size;
+c_decl make_global_var_decl(char* name, c_type ctype, char* type_str) {
+  c_decl d;
+  d.name = name;
+  d.base = GLOBAL_VAR_DECL;
+  d.ctype = ctype;
+  d.type_str = type_str;
+
+  return d;
 }
 
-inline unsigned int c_type_get_field_length(c_type *t) {
-  return t->data.compound.field_length;
+c_type make_signed_int_c_type(unsigned int width, int is_const, int is_volatile) {
+    c_type t;
+    t.base = INTEGER;
+    t.width = width;
+    t.is_const = is_const;
+    t.is_volatile = is_volatile;
+    t.is_restrict = 0;
+    t.is_signed = 1;
+    t.is_literal = 0;
+    t.has_fields = 0;
+    t.field_length = 0;
+    t.fields = NULL;
+    return t;
 }
 
-#define c_type_pointer_deref c_type_get_fields
-inline c_type *c_type_get_fields(c_type *t) {
-  return t->data.compound.fields;
+c_type make_unsigned_int_c_type(unsigned int width, int is_const, int is_volatile) {
+    c_type t;
+    t.base = INTEGER;
+    t.width = width;
+    t.is_const = is_const;
+    t.is_volatile = is_volatile;
+    t.is_restrict = 0;
+    t.is_signed = 0;
+    t.is_literal = 0;
+    t.has_fields = 0;
+    t.field_length = 0;
+    t.fields = NULL;
+    return t;
 }
+
+c_type make_pointer_c_type(c_type type, int is_const, int is_volatile, int is_restrict) {
+  c_type t;
+  t.base = POINTER;
+  t.fields = (c_type*) malloc(sizeof(c_type));
+  t.has_fields = 1;
+  memcpy(t.fields, &type, sizeof(c_type));
+  t.field_length = 1;
+  t.is_signed = 0;
+  t.is_literal = 0;
+  t.is_const = is_const;
+  t.is_volatile = is_volatile;
+  t.is_restrict = is_restrict;
+  return t;
+}
+
+
 
 const char* c_type_get_size_str(c_type s);
 const char* decl_type_get_str(c_decl d);

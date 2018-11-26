@@ -53,7 +53,6 @@ Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object **scheme_argv) {
   declarations = scheme_null;
   decls = ffi_parse(argc, argv);
 
-
   for (i = 0; i < decls.length; ++i) {
     Scheme_Object *decl_scheme;
     c_decl* d;
@@ -67,7 +66,6 @@ Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object **scheme_argv) {
   return declarations;
 }
 
-
 Scheme_Object *make_atomic_ctype_instance(c_type *t) {
   Scheme_Object *new_ctype;
   Scheme_Object *is_const;
@@ -75,15 +73,11 @@ Scheme_Object *make_atomic_ctype_instance(c_type *t) {
   Scheme_Object *is_restrict;
   Scheme_Object *width;
   const char * s;
-  int x;
 
-  x = t->width;
-  s = c_type_get_str(*t);
-  // make bools
-  is_const = t->quals.is_const ? scheme_true : scheme_false;
-  is_volatile = t->quals.is_volatile ? scheme_true : scheme_false;
-  is_restrict = t->quals.is_restrict ? scheme_true : scheme_false;
-  width = scheme_make_integer(x);
+  is_const = t->is_const ? scheme_true : scheme_false;
+  is_volatile = t->is_volatile ? scheme_true : scheme_false;
+  is_restrict = t->is_restrict ? scheme_true : scheme_false;
+  width = scheme_make_integer(t->width);
 
   new_ctype =
    scheme_make_pair(width,
@@ -102,8 +96,8 @@ Scheme_Object *make_decl_instance(c_decl *decl) {
   Scheme_Object * type;
 
   name = scheme_make_utf8_string(decl->name);
-  type_info = make_atomic_ctype_instance(&(decl->type_info));
-  qual_type = scheme_make_utf8_string(decl->qual_type);
+  type_info = make_atomic_ctype_instance(&(decl->ctype));
+  qual_type = scheme_make_utf8_string(decl->type_str);
 
   new_declaration =
     scheme_make_pair(qual_type,
@@ -111,6 +105,4 @@ Scheme_Object *make_decl_instance(c_decl *decl) {
         scheme_make_pair( type_info, scheme_null)));
   return new_declaration;
 }
-
-
 

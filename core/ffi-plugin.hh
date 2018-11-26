@@ -53,12 +53,11 @@ public:
    : accumulator(accumulator), compiler(compiler), deep_parse(deep_parse) {}
   bool HandleTopLevelDecl(DeclGroupRef decls) override;
   bool topLevelHeaderContains(Decl *d);
-  qualifiers get_quals(QualType type);
-  c_decl make_global_var(const VarDecl *d);
-  c_type get_pointee_type(QualType type);
+  c_decl make_decl_from_global_var(const Decl *d);
+  c_type get_pointee_type(QualType type, const Decl* d);
 
   c_type_id get_c_type_id(QualType type);
-  c_type dispatch_on_type(QualType qual_type);
+  c_type dispatch_on_type(QualType qual_type, const Decl *d);
 };
 
 class ffiPluginAction : public ASTFrontendAction {
