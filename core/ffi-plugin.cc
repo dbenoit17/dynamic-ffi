@@ -105,6 +105,12 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
     ctype = make_unknown_c_type(width, is_const, is_volatile);
   }
 
+  else if (type->isArrayType()) {
+  //  printf("record type: %s\n", qual_type.getAsString().c_str());
+    QualType pointee = type->getAsArrayTypeUnsafe()->getElementType();
+    ctype = make_pointer_c_type(dispatch_on_type(pointee, d), is_const, is_volatile, is_restrict, width);
+  }
+
   else {
     printf("unknown type: %s\n", qual_type.getAsString().c_str());
     ctype = make_unknown_c_type(width, is_const, is_volatile);
