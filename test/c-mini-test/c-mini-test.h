@@ -41,4 +41,6 @@ void test_case(test_result*, int expression, char* fail_notification);
 /* Run a test suite */
 int run_test_suite(const unit_test* array_of_tests, char *test_suite_name, unsigned int num_tests);
 
+int z;
+
 #endif

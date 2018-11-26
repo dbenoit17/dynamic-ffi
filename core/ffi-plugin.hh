@@ -31,9 +31,7 @@ class ffiAccumulator {
 public:
   std::set<std::string> sources;
   bool deep_parse;
-  int matches;
   ffiAccumulator(std::vector<std::string> &sources_vec) {
-    this->matches = 0;
     sources = std::set<std::string>(sources_vec.begin(), sources_vec.end());
   };
   std::vector<c_decl> &get_c_decls() {return declarations;};
@@ -54,6 +52,7 @@ public:
   bool HandleTopLevelDecl(DeclGroupRef decls) override;
   bool topLevelHeaderContains(Decl *d);
   c_decl make_decl_from_global_var(const Decl *d);
+  c_decl make_decl_from_record(const Decl *dec);
   c_type get_pointee_type(QualType type, const Decl* d);
 
   c_type_id get_c_type_id(QualType type);

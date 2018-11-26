@@ -6,7 +6,14 @@ int y;
 unsigned int z;
 
 volatile int v;
-const int c;
+
+const int ci;
 
 uint64_t l;
+
+float f;
+
+double d;
+
+char* c;
 
