@@ -78,48 +78,6 @@ c_decl_array ffi_deep_parse(int argc, const char **argv) {
   return dynamic_ffi_parse(argc, argv, true);
 }
 
-const char* decl_type_get_str(c_decl d) {
-  switch (d.base) {
-    case FUNCTION_DECL:
-      return "FUNCTION_DECL";
-      break;
-    case GLOBAL_VAR_DECL:
-      return "GLOBAL_VAR_DECL";
-      break;
-    case STRUCT_DECL:
-      return "STRUCT_DECL";
-      break;
-    case UNION_DECL:
-      return "UNION_DECL";
-      break;
-    default:
-      printf("unknown c_decl type");
-      exit(0);
-  }
-}
-
-const char* c_type_get_str(c_type s) {
-  switch (s.base) {
-  case INTEGER:
-    return "int";
-    break;
-    break;
-  case STRUCT:
-    return "struct";
-    break;
-  case UNION:
-    return "union";
-    break;
-  case POINTER:
-    return "pointer";
-    break;
-  case UNKNOWN:
-  default:
-    return "uknown";
-    break;
-  }
-}
-
 void c_type_free_fields(c_type *t) {
   if (t->has_fields) {
     c_type *fields = t->fields;
@@ -162,51 +120,171 @@ void string_append(char **dest, const char *src,
   (*dest)[*length] = '\0';
 }
 
-char* format_decl(c_decl d) {
-  c_type *t = &(d.ctype);
-  unsigned int size = 512;
-  unsigned int length = 0;
-  char *buffer = (char*) malloc(sizeof(char) * size);
+c_decl make_global_var_decl(char* name, c_type ctype, char* type_str) {
+  c_decl d;
+  d.name = name;
+  d.base = GLOBAL_VAR_DECL;
+  d.ctype = ctype;
+  d.type_str = type_str;
 
-  string_append(&buffer, decl_type_get_str(d), &length, &size);
-  string_append(&buffer, "\n name: ", &length, &size);
-  string_append(&buffer, d.name, &length, &size);
-  string_append(&buffer, "\n type: ", &length, &size);
-
-  if (!t->has_fields) {
-    string_append(&buffer, c_type_get_str(*t), &length, &size);
-  }
-  while (t->has_fields) {
-    switch (t->base) {
-      case STRUCT:
-        break;
-      case UNION:
-        break;
-      case POINTER:
-        {
-          int indirects = 0, i;
-          t = c_type_pointer_deref(t);
-          while (t->base == POINTER) {
-            ++indirects;
-            t = c_type_pointer_deref(t);
-          }
-         string_append(&buffer, c_type_get_str(*t), &length, &size);
-          for (i = 0; i < indirects; ++i) {
-            string_append(&buffer, "*", &length, &size);
-          }
-        }
-        break;
-      default:
-        break;
-    }
-  }
-  return buffer;
+  return d;
 }
 
-void print_decl(c_decl d) {
-  char* temp = format_decl(d);
-  printf("%s\n", temp);
-  free(temp);
+c_decl make_struct_decl(char* name, c_type ctype, char* type_str) {
+  c_decl d;
+  d.name = name;
+  d.base = STRUCT_DECL;
+  d.ctype = ctype;
+  d.type_str = type_str;
+
+  return d;
+}
+
+c_decl make_function_decl(char* name, c_type ctype, char* type_str) {
+  c_decl d;
+  d.name = name;
+  d.base = FUNCTION_DECL;
+  d.ctype = ctype;
+  d.type_str = type_str;
+
+  return d;
+}
+
+c_type make_signed_int_c_type(uint64_t width, int is_const, int is_volatile) {
+    c_type t;
+    t.base = INTEGER;
+    t.width = width;
+    t.is_const = is_const;
+    t.is_volatile = is_volatile;
+    t.is_restrict = 0;
+    t.is_signed = 1;
+    t.is_literal = 0;
+    t.has_fields = 0;
+    t.field_length = 0;
+    t.fields = NULL;
+    return t;
+}
+
+
+c_type make_unsigned_int_c_type(uint64_t width, int is_const, int is_volatile) {
+    c_type t;
+    t.base = INTEGER;
+    t.width = width;
+    t.is_const = is_const;
+    t.is_volatile = is_volatile;
+    t.is_restrict = 0;
+    t.is_signed = 0;
+    t.is_literal = 0;
+    t.has_fields = 0;
+    t.field_length = 0;
+    t.fields = NULL;
+    return t;
+}
+
+c_type make_floating_c_type(uint64_t width, int is_const, int is_volatile) {
+    c_type t;
+    t.base = FLOATING;
+    t.width = width;
+    t.is_const = is_const;
+    t.is_volatile = is_volatile;
+    t.is_restrict = 0;
+    t.is_signed = 0;
+    t.is_literal = 0;
+    t.has_fields = 0;
+    t.field_length = 0;
+    t.fields = NULL;
+    return t;
+}
+
+c_type make_unknown_c_type(uint64_t width, int is_const, int is_volatile) {
+    c_type t;
+    t.base = UNKNOWN;
+    t.width = width;
+    t.is_const = is_const;
+    t.is_volatile = is_volatile;
+    t.is_restrict = 0;
+    t.is_signed = 0;
+    t.is_literal = 0;
+    t.has_fields = 0;
+    t.field_length = 0;
+    t.fields = NULL;
+    return t;
+}
+
+c_type make_void_c_type(void) {
+    c_type t;
+    t.base = VOID;
+    t.width = 0;
+    t.is_const = 0;
+    t.is_volatile = 0;
+    t.is_restrict = 0;
+    t.is_signed = 0;
+    t.is_literal = 0;
+    t.has_fields = 0;
+    t.field_length = 0;
+    t.fields = NULL;
+    return t;
+}
+
+c_type make_pointer_c_type(c_type type, int is_const, int is_volatile, int is_restrict, uint64_t width) {
+  c_type t;
+  t.base = POINTER;
+  t.fields = (c_type*) malloc(sizeof(c_type));
+  t.has_fields = 1;
+  memcpy(t.fields, &type, sizeof(c_type));
+  t.field_length = 1;
+  t.is_signed = 0;
+  t.is_literal = 0;
+  t.is_const = is_const;
+  t.is_volatile = is_volatile;
+  t.is_restrict = is_restrict;
+  t.width = width;
+  return t;
+}
+c_type make_array_c_type(c_type type, int is_const, int is_volatile, int is_restrict, uint64_t width) {
+  c_type t;
+  t.base = ARRAY;
+  t.fields = (c_type*) malloc(sizeof(c_type));
+  t.has_fields = 1;
+  memcpy(t.fields, &type, sizeof(c_type));
+  t.field_length = 1;
+  t.is_signed = 0;
+  t.is_literal = 0;
+  t.is_const = is_const;
+  t.is_volatile = is_volatile;
+  t.is_restrict = is_restrict;
+  t.width = width;
+  return t;
+}
+
+c_type make_struct_type(c_type* fields, int field_length, int is_const, int is_volatile, uint64_t width) {
+  c_type t;
+  t.base = STRUCT;
+  t.fields = fields;
+  t.has_fields = 1;
+  t.field_length = field_length;
+  t.is_signed = 0;
+  t.is_literal = 0;
+  t.is_const = is_const;
+  t.is_volatile = is_volatile;
+  t.is_restrict = 0;
+  t.width = width;
+  return t;
+}
+
+c_type make_function_type(c_type* fields, int field_length) {
+  c_type t;
+  t.base = FUNCTION;
+  t.fields = fields;
+  t.has_fields = 1;
+  t.field_length = field_length;
+  t.is_signed = 0;
+  t.is_literal = 0;
+  t.is_const = 0;
+  t.is_volatile = 0;
+  t.is_restrict = 0;
+  t.width = 0;
+  return t;
 }
 
 } /* end extern C */

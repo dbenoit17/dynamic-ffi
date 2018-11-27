@@ -70,7 +70,9 @@ const char* INTEGER_STR = "integer";
 const char* FLOATING_STR = "floating";
 const char* POINTER_STR = "pointer";
 const char* STRUCT_STR = "struct";
-
+const char* ARRAY_STR = "array";
+const char* FUNCTION_STR = "function";
+const char* VOID_STR = "void";
 char* ctype_to_str(c_type *t) {
   const char * sym;
   switch (t->base) {
@@ -83,13 +85,41 @@ char* ctype_to_str(c_type *t) {
     case POINTER:
       sym = POINTER_STR;
       break;
+    case VOID:
+      sym = VOID_STR;
+      break;
     case STRUCT:
       sym = STRUCT_STR;
+      break;
+    case ARRAY:
+      sym = ARRAY_STR;
+      break;
+    case FUNCTION:
+      sym = FUNCTION_STR;
       break;
     default:
       sym = "unknown";
       break;
   };
+  return sym;
+}
+
+const char* FUNCTION_DECL_STR = "function-decl";
+const char* VAR_DECL_STR = "var-decl";
+const char* STRUCT_DECL_STR = "struct-decl";
+char* decl_to_str(c_decl *d) {
+  const char * sym;
+  switch (d->base) {
+    case FUNCTION_DECL:
+      sym = FUNCTION_DECL_STR;
+      break;
+    case GLOBAL_VAR_DECL:
+      sym = VAR_DECL_STR;
+      break;
+    case STRUCT_DECL:
+      sym = STRUCT_DECL_STR;
+      break;
+    }
   return sym;
 }
 
@@ -117,7 +147,7 @@ Scheme_Object *make_ctype_instance(c_type *t) {
   sym = scheme_intern_symbol(ctype_to_str(t));
   field_list = scheme_null;
 
-  for (i = 0; i < t->field_length; ++i) {
+  for (i = t->field_length -1; i >= 0; --i) {
     Scheme_Object *new_field;
 
     new_field = make_ctype_instance(t->fields + i);
@@ -143,16 +173,19 @@ Scheme_Object *make_decl_instance(c_decl *decl) {
   Scheme_Object * name;
   Scheme_Object * ctype;
   Scheme_Object * type_str;
+  Scheme_Object * sym;
 
   name = scheme_make_utf8_string(decl->name);
   type_str = scheme_make_utf8_string(decl->type_str);
   ctype = make_ctype_instance(&(decl->ctype));
 
+  sym = scheme_intern_symbol(decl_to_str(decl));
 
   new_declaration =
-    scheme_make_pair(type_str,
+    scheme_make_pair(sym,
+     scheme_make_pair(type_str,
       scheme_make_pair(name,
-        scheme_make_pair(ctype, scheme_null)));
+       scheme_make_pair(ctype, scheme_null))));
   return new_declaration;
 }
 

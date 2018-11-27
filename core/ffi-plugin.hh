@@ -54,6 +54,7 @@ public:
   c_decl make_decl_from_global_var(const Decl *d);
   c_decl make_decl_from_record(const Decl *dec);
   c_type get_pointee_type(QualType type, const Decl* d);
+  c_decl make_decl_from_function(const Decl *dec);
 
   c_type_id get_c_type_id(QualType type);
   c_type dispatch_on_type(QualType qual_type, const Decl *d);
