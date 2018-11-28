@@ -11,9 +11,9 @@ const int ci;
 
 uint64_t l;
 
+char* c;
+
 float f;
 
-double d;
-
-char* c;
+long double d;
 

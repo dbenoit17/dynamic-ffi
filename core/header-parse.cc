@@ -55,6 +55,7 @@ c_decl_array dynamic_ffi_parse(int argc, const char **argv, int deep_parse) {
          << "See Clang output for more details.  Exiting...\n";
     exit(ret);
   } */
+  printf("parse complete\n");
 
   std::vector<c_decl> vdecls = acc.get_c_decls();
   c_decl * declarations = (c_decl*) malloc(sizeof(c_decl) * vdecls.size());
@@ -130,10 +131,10 @@ c_decl make_global_var_decl(char* name, c_type ctype, char* type_str) {
   return d;
 }
 
-c_decl make_struct_decl(char* name, c_type ctype, char* type_str) {
+c_decl make_record_decl(char* name, c_type ctype, char* type_str) {
   c_decl d;
   d.name = name;
-  d.base = STRUCT_DECL;
+  d.base = RECORD_DECL;
   d.ctype = ctype;
   d.type_str = type_str;
 
@@ -144,6 +145,16 @@ c_decl make_function_decl(char* name, c_type ctype, char* type_str) {
   c_decl d;
   d.name = name;
   d.base = FUNCTION_DECL;
+  d.ctype = ctype;
+  d.type_str = type_str;
+
+  return d;
+}
+
+c_decl make_enum_decl(char* name, c_type ctype, char* type_str) {
+  c_decl d;
+  d.name = name;
+  d.base = ENUM_DECL;
   d.ctype = ctype;
   d.type_str = type_str;
 
@@ -211,12 +222,12 @@ c_type make_unknown_c_type(uint64_t width, int is_const, int is_volatile) {
     return t;
 }
 
-c_type make_void_c_type(void) {
+c_type make_void_c_type(uint64_t width, int is_const, int is_volatile) {
     c_type t;
     t.base = VOID;
-    t.width = 0;
-    t.is_const = 0;
-    t.is_volatile = 0;
+    t.width = width;
+    t.is_const = is_const;
+    t.is_volatile = is_volatile;
     t.is_restrict = 0;
     t.is_signed = 0;
     t.is_literal = 0;
@@ -260,6 +271,21 @@ c_type make_array_c_type(c_type type, int is_const, int is_volatile, int is_rest
 c_type make_struct_type(c_type* fields, int field_length, int is_const, int is_volatile, uint64_t width) {
   c_type t;
   t.base = STRUCT;
+  t.fields = fields;
+  t.has_fields = 1;
+  t.field_length = field_length;
+  t.is_signed = 0;
+  t.is_literal = 0;
+  t.is_const = is_const;
+  t.is_volatile = is_volatile;
+  t.is_restrict = 0;
+  t.width = width;
+  return t;
+}
+
+c_type make_union_type(c_type* fields, int field_length, int is_const, int is_volatile, uint64_t width) {
+  c_type t;
+  t.base = UNION;
   t.fields = fields;
   t.has_fields = 1;
   t.field_length = field_length;

@@ -70,6 +70,7 @@ const char* INTEGER_STR = "integer";
 const char* FLOATING_STR = "floating";
 const char* POINTER_STR = "pointer";
 const char* STRUCT_STR = "struct";
+const char* UNION_STR = "union";
 const char* ARRAY_STR = "array";
 const char* FUNCTION_STR = "function";
 const char* VOID_STR = "void";
@@ -91,6 +92,9 @@ char* ctype_to_str(c_type *t) {
     case STRUCT:
       sym = STRUCT_STR;
       break;
+    case UNION:
+      sym = UNION_STR;
+      break;
     case ARRAY:
       sym = ARRAY_STR;
       break;
@@ -106,7 +110,8 @@ char* ctype_to_str(c_type *t) {
 
 const char* FUNCTION_DECL_STR = "function-decl";
 const char* VAR_DECL_STR = "var-decl";
-const char* STRUCT_DECL_STR = "struct-decl";
+const char* RECORD_DECL_STR = "record-decl";
+const char* ENUM_DECL_STR = "enum-decl";
 char* decl_to_str(c_decl *d) {
   const char * sym;
   switch (d->base) {
@@ -116,8 +121,14 @@ char* decl_to_str(c_decl *d) {
     case GLOBAL_VAR_DECL:
       sym = VAR_DECL_STR;
       break;
-    case STRUCT_DECL:
-      sym = STRUCT_DECL_STR;
+    case RECORD_DECL:
+      sym = RECORD_DECL_STR;
+      break;
+    case ENUM_DECL:
+      sym = ENUM_DECL_STR;
+      break;
+    default:
+      sym = "unknown-decl";
       break;
     }
   return sym;

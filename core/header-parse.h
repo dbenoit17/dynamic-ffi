@@ -12,22 +12,23 @@ extern "C" {
 typedef enum {
   INTEGER,
   FLOATING,
-  ENUM,
   STRUCT,
   UNION,
   POINTER,
   ARRAY,
   VOID,
   FUNCTION,
-  TYPEDEF,
   UNKNOWN,
+
+  ENUM,
+  TYPEDEF,
 } c_type_id;
 
 typedef enum {
   FUNCTION_DECL,
   GLOBAL_VAR_DECL,
-  STRUCT_DECL,
-  UNION_DECL,
+  RECORD_DECL,
+  ENUM_DECL,
   TYPEDEF_DECL
 } c_decl_id;
 
@@ -61,8 +62,9 @@ inline c_type *c_type_pointer_deref(c_type *t) {
 }
 
 c_decl make_global_var_decl(char* name, c_type ctype, char* type_str);
-c_decl make_struct_decl(char* name, c_type ctype, char* type_str);
+c_decl make_record_decl(char* name, c_type ctype, char* type_str);
 c_decl make_function_decl(char* name, c_type ctype, char* type_str);
+c_decl make_enum_decl(char* name, c_type ctype, char* type_str);
 
 c_type make_signed_int_c_type(uint64_t width, int is_const, int is_volatile);
 c_type make_unsigned_int_c_type(uint64_t width, int is_const, int is_volatile);
@@ -74,8 +76,10 @@ c_type make_pointer_c_type(c_type type, int is_const, int is_volatile,
                            int is_restrict, uint64_t width);
 c_type make_struct_type(c_type* fields, int field_length, int is_const,
                         int is_volatile, uint64_t width);
+c_type make_union_type(c_type* fields, int field_length, int is_const,
+                        int is_volatile, uint64_t width);
 c_type make_function_type(c_type* fields, int field_length);
-c_type make_void_c_type(void);
+c_type make_void_c_type(uint64_t width, int is_const, int is_volatile);
 
 void free_decl_array(c_decl_array a);
 void c_type_free_field(c_type *t);

@@ -24,6 +24,12 @@
 
 #define RUN_TEST_SUITE(X,Y) run_test_suite(X,Y,sizeof(X) / sizeof(unit_test))
 
+enum blah {
+  DE,
+  BLAH,
+  BLECH
+};
+
 struct test_result {
   char test_name[ERR_LENGTH_MAX];
   unsigned int num_errors;
@@ -40,6 +46,8 @@ void set_test_name(test_result*, char *test_name);
 void test_case(test_result*, int expression, char* fail_notification);
 /* Run a test suite */
 int run_test_suite(const unit_test* array_of_tests, char *test_suite_name, unsigned int num_tests);
+
+void use_blah(enum blah);
 
 int z;
 

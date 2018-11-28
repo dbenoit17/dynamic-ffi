@@ -1,7 +1,9 @@
 #lang racket/base
 
 (require "dynamic-ffi/dynamic-ffi.rkt")
-(provide (all-from-out "dynamic-ffi/dynamic-ffi.rkt"))
+(provide
+  (prefix-out dffi:
+    (all-from-out "dynamic-ffi/dynamic-ffi.rkt")))
 
 (module+ test
   (require rackunit))
