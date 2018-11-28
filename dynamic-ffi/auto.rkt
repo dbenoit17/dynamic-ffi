@@ -3,6 +3,11 @@
 (require
   ffi/unsafe
   ffi/unsafe/define
+  syntax/parse
+  (for-syntax racket/base
+              racket/syntax
+              syntax/parse
+              syntax/parse/experimental/template)
   racket/match
   (prefix-in dffi: "dynamic-ffi.rkt"))
 
@@ -88,4 +93,17 @@
       (cons (string->symbol name)
             (get-ffi-obj name lib (make-dffi-obj type)
                (λ () (error "lib " lib " does not contain " name)))))))
+
+(define-syntax (define-dynamic-ffi stx)
+  (syntax-case stx ()
+    [(_ id header lib)
+     (with-syntax
+       ([obj-map (format-id #'id "~a-obj-map" (syntax->datum #'id))]
+        [obj-ref (format-id #'id "~a-obj-ref" (syntax->datum #'id))]
+        [obj-run (format-id #'id"~a-funcall" (syntax->datum #'id))])
+       #'(define-values (obj-map obj-ref obj-run)
+           (values (build-ffi-obj-map header lib)
+                   (λ (elem) (hash-ref obj-map elem))
+                   (λ (elem . params)
+                     (apply (hash-ref obj-map elem) params )))))]))
 
