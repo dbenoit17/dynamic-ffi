@@ -2,7 +2,7 @@ dynamic-ffi
 ===========
 
 Gather top-level declaration syntax-tree data from C
-headers via through clang.
+headers via clang.
 
 To install the package:
 ```

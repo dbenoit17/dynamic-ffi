@@ -13,11 +13,11 @@
 (define-runtime-path dynamic-ffi.3m.c
   (build-path ".." "core" "dynamic-ffi.3m.c"))
 
-(define-runtime-path ffi-plugin.cc
-  (build-path ".." "core" "ffi-plugin.cc"))
+(define-runtime-path clang-plugin.cc
+  (build-path ".." "core" "clang-plugin.cc"))
 
-(define-runtime-path header-parse.cc
-  (build-path ".." "core" "header-parse.cc"))
+(define-runtime-path clang-export.cc
+  (build-path ".." "core" "clang-export.cc"))
 
 (define-runtime-path dynamic-extension-dir
  (build-path "compiled" "native" (system-library-subpath)))
@@ -28,16 +28,16 @@
 (define-runtime-path dynamic-ffi_3m.o
   (build-path "compiled" "native" "dynamic-ffi_3m.o"))
 
-(define-runtime-path ffi-plugin.so
+(define-runtime-path clang-plugin.so
   (build-path "compiled" "native"
-    (path-add-suffix "ffi-plugin" (system-type 'so-suffix))))
+    (path-add-suffix "clang-plugin" (system-type 'so-suffix))))
 
-(define-runtime-path header-parse.so
+(define-runtime-path clang-export.so
   (build-path "compiled" "native"
-    (path-add-suffix "header-parse" (system-type 'so-suffix))))
+    (path-add-suffix "clang-export" (system-type 'so-suffix))))
 
-(define-runtime-path header-parse-lib
-  (build-path "compiled" "native" "header-parse"))
+(define-runtime-path clang-export-lib
+  (build-path "compiled" "native" "clang-export"))
 
 (define-runtime-path dynamic-ffi-core_rkt.so
   (build-path "compiled" "native" (system-library-subpath)

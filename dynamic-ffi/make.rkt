@@ -60,15 +60,18 @@
  (let ([make-plugin-cmd
         (format-append cc "-v" in ... (get-llvm-config)
           lflags+= "-o" out-path cxxflags+= ldflags+=)])
-   (unless (for/and ([i (list in ...)])
-         (timestamp<? i out-path))
+   (unless
+     (for/and ([i (list in ...)])
+         (and (file-exists? out-path)
+           (timestamp<? i out-path)))
      (unless (system make-plugin-cmd)
-       (error "header-parse: could not compile shared library")))
+       (error "clang-export: could not compile shared library")))
    out-path))
 
 (define (make-native-libs)
-  (when (for/and ([i (list dynamic-ffi.c header-parse.so)])
-         (timestamp<? i dynamic-ffi-core_rkt.so))
+  (when (for/and ([i (list dynamic-ffi.c clang-export.so)])
+         (and (file-exists? clang-export.so)
+              (timestamp<? i dynamic-ffi-core_rkt.so)))
     (void))
   (define cwd (current-directory))
   (current-directory shared-object-dir)
@@ -79,14 +82,14 @@
     (system (format "raco ctool --3m --cc ~a" dynamic-ffi.3m.c)))
   (printf "making extension\n")
   (system (format "raco ctool --3m --ld ~a ~a ~a"
-            dynamic-ffi-core_rkt.so dynamic-ffi_3m.o header-parse.so))
+            dynamic-ffi-core_rkt.so dynamic-ffi_3m.o clang-export.so))
   (current-directory cwd))
 
 (define (post-installer x)
   (unless (directory-exists? dynamic-extension-dir)
     (make-directory* dynamic-extension-dir))
-  (make-ffi-shared-lib ffi-plugin.so ffi-plugin.cc)
-  (make-ffi-shared-lib header-parse.so header-parse.cc ffi-plugin.so)
+  (make-ffi-shared-lib clang-plugin.so clang-plugin.cc)
+  (make-ffi-shared-lib clang-export.so clang-export.cc clang-plugin.so)
   (make-native-libs))
 
 (module+ main

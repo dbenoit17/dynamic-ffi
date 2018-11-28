@@ -7,7 +7,7 @@
 
 
 #include "escheme.h"
-#include "header-parse.h"
+#include "clang-export.h"
 
 const int struct_flags = SCHEME_STRUCT_NO_MAKE_PREFIX;
 Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object ** argv);

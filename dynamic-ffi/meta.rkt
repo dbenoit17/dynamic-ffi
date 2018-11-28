@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require racket/match
-         racket/list
+(require racket/list
          "dynamic-ffi-core.rkt")
 
 (provide declaration
@@ -9,6 +8,7 @@
          (rename-out
            [dynamic-ffi-wrapper
            dynamic-ffi-parse]))
+
 (module ctype-defs racket/base
  (struct declaration [name type type-string] #:transparent)
  (struct function-decl declaration [])

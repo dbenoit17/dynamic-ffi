@@ -1,4 +1,4 @@
-#include "ffi-plugin.hh"
+#include "clang-plugin.hh"
 
 /* https://clang.llvm.org/doxygen/classclang_1_1Type.html
    https://clang.llvm.org/doxygen/classclang_1_1TargetInfo.html */

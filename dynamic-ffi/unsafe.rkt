@@ -2,16 +2,12 @@
 
 (require
   ffi/unsafe
-  ffi/unsafe/define
-  syntax/parse
   (for-syntax racket/base
-              racket/syntax
-              syntax/parse
-              syntax/parse/experimental/template)
-  racket/match
-  (prefix-in dffi: "dynamic-ffi.rkt"))
+              racket/syntax)
+  (prefix-in dffi: "meta.rkt"))
 
-(provide (all-defined-out) (all-from-out ffi/unsafe))
+(provide (all-defined-out)
+         (all-from-out ffi/unsafe))
 
 (define (make-ffi-int ct-int)
   (define width (dffi:ctype-width ct-int))
@@ -85,6 +81,14 @@
   [else (error "unimplemented type")]))
 
 (define (build-ffi-obj-map header lib)
+  (unless (file-exists? header)
+    (error "file does not exist: " header))
+  (unless
+    (or (file-exists? (string-append lib ".so"))
+        (file-exists? (string-append lib ".a"))
+        (file-exists? (string-append lib ".dylib"))
+        (file-exists? (string-append lib ".dll")))
+    (error "file does not exist: " lib))
   (define ffi-data (dffi:dynamic-ffi-parse header))
   (make-hash
     (for/list ([decl ffi-data])

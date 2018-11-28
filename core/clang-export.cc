@@ -14,8 +14,8 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 
-#include "ffi-plugin.hh"
-#include "header-parse.h"
+#include "clang-plugin.hh"
+#include "clang-export.h"
 
 using namespace clang::tooling;
 using namespace clang;
