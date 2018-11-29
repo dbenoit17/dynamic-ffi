@@ -83,11 +83,8 @@
   [else (error "unimplemented type")]))
 
 (define (build-ffi-obj-map lib . headers)
-  (unless
-    (or (file-exists? (string-append lib ".so"))
-        (file-exists? (string-append lib ".a"))
-        (file-exists? (string-append lib ".dylib"))
-        (file-exists? (string-append lib ".dll")))
+  (unless (for/or ([ext '(".so" ".dylib" ".dll")])
+            (file-exists? (string-append lib ext)))
     (error "file does not exist: " (string-append lib ".so")))
   (define ffi-data (apply dffi:dynamic-ffi-parse headers))
   (define pairs
