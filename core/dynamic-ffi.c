@@ -185,10 +185,19 @@ Scheme_Object *make_decl_instance(c_decl *decl) {
   Scheme_Object * ctype;
   Scheme_Object * type_str;
   Scheme_Object * sym;
+  Scheme_Object * literal_val;
 
   name = scheme_make_utf8_string(decl->name);
   type_str = scheme_make_utf8_string(decl->type_str);
   ctype = make_ctype_instance(&(decl->ctype));
+  if (decl->base == ENUM_DECL) {
+    int64_t *value;
+    value = (int64_t*) decl->val;
+    literal_val =  scheme_make_integer(*value);
+  }
+  else {
+    literal_val = scheme_false;
+  }
 
   sym = scheme_intern_symbol(decl_to_str(decl));
 
@@ -196,7 +205,8 @@ Scheme_Object *make_decl_instance(c_decl *decl) {
     scheme_make_pair(sym,
      scheme_make_pair(type_str,
       scheme_make_pair(name,
-       scheme_make_pair(ctype, scheme_null))));
+       scheme_make_pair(ctype,
+         scheme_make_pair(literal_val, scheme_null)))));
   return new_declaration;
 }
 

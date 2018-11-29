@@ -10,7 +10,7 @@
            dynamic-ffi-parse]))
 
 (module ctype-defs racket/base
- (struct declaration [name type type-string] #:transparent)
+ (struct declaration [name type type-string literal-value] #:transparent)
  (struct function-decl declaration [])
  (struct var-decl declaration [])
  (struct record-decl declaration [])
@@ -62,7 +62,8 @@
   (dispatch
     (decl-name d)
     (make-ctype (decl-ctype d))
-    (decl-type-str d)))
+    (decl-type-str d)
+    (decl-literal-value d)))
 
 ;; Where t is ctype sublist of d
 (define (make-ctype t)
@@ -92,6 +93,8 @@
   (third c-decl))
 (define (decl-ctype c-decl)
   (fourth c-decl))
+(define (decl-literal-value c-decl)
+  (fifth c-decl))
 
 (define (raw-ctype-sym ctype)
   (first ctype))

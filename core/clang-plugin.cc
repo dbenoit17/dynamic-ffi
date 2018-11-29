@@ -22,8 +22,12 @@ bool ffi::ffiASTConsumer::HandleTopLevelDecl(DeclGroupRef decls) {
         accumulator.push_decl(d);
       }
       else if (const EnumDecl  *enum_decl = dyn_cast<EnumDecl>((Decl*) *i)) {
-        c_decl d = make_decl_from_enum(enum_decl);
-        accumulator.push_decl(d);
+        c_type ctype = dispatch_on_type(enum_decl->getIntegerType(), enum_decl);
+        for (auto j = enum_decl->enumerator_begin(); j != enum_decl->enumerator_end(); j++){
+          c_decl d = make_decl_from_enum_constant(*j);
+          d.ctype = ctype;
+          accumulator.push_decl(d);
+        }
       }
       else if (const RecordDecl  *record_decl = dyn_cast<RecordDecl>((Decl*) *i)) {
         c_decl d = make_decl_from_record(record_decl);
@@ -54,8 +58,8 @@ bool ffi::ffiASTConsumer::topLevelHeaderContains(Decl *d) {
   return accumulator.sources.count(filename);
 }
 
-c_decl ffi::ffiASTConsumer::make_decl_from_enum(const Decl *dec) {
-   const EnumDecl  *d = dyn_cast<EnumDecl>(dec);
+c_decl ffi::ffiASTConsumer::make_decl_from_enum_constant(const Decl *dec) {
+   const EnumConstantDecl  *d = dyn_cast<EnumConstantDecl>(dec);
 
    std::string cxx_name = d->getNameAsString();
    char* st = "enum";
@@ -64,9 +68,13 @@ c_decl ffi::ffiASTConsumer::make_decl_from_enum(const Decl *dec) {
    strcpy(name, cxx_name.c_str());
    strcpy(type_str, st);
 
-   c_type ctype = dispatch_on_type(d->getIntegerType(), dec);
+   int64_t * value = (int64_t*) malloc(sizeof(int64_t));
 
-   return make_enum_decl(name, ctype, type_str);
+   *value = d->getInitVal().getExtValue();
+   c_type ctype;
+
+
+   return make_enum_decl(name, ctype, type_str, value);
 }
 
 c_decl ffi::ffiASTConsumer::make_decl_from_function(const Decl *dec) {
@@ -81,7 +89,7 @@ c_decl ffi::ffiASTConsumer::make_decl_from_function(const Decl *dec) {
 
    c_type ctype = dispatch_on_type(d->getType(), dec);
 
-   return make_function_decl(name, ctype, type_str);
+   return make_function_decl(name, ctype, type_str, NULL);
 }
 
 c_decl ffi::ffiASTConsumer::make_decl_from_record(const Decl *dec) {
@@ -97,7 +105,7 @@ c_decl ffi::ffiASTConsumer::make_decl_from_record(const Decl *dec) {
    const RecordType * rt = d->getTypeForDecl()->getAs<clang::RecordType>();
    c_type ctype = dispatch_on_type(rt->getCanonicalTypeUnqualified(), dec);
 
-   return make_record_decl(name, ctype, type_str);
+   return make_record_decl(name, ctype, type_str, NULL);
 }
 
 c_decl ffi::ffiASTConsumer::make_decl_from_global_var(const Decl *dec) {
@@ -112,7 +120,7 @@ c_decl ffi::ffiASTConsumer::make_decl_from_global_var(const Decl *dec) {
    strcpy(type_str, cxx_type.c_str());
 
    c_type ctype = dispatch_on_type(type, dec);
-   return make_global_var_decl(name, ctype, type_str);
+   return make_global_var_decl(name, ctype, type_str, NULL);
 }
 
 c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) {

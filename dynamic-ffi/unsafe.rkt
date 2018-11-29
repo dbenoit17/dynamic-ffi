@@ -46,13 +46,15 @@
   (define struct-members
     (for/list ([mem (dffi:ctype-record-members ct-struct)])
       (make-dffi-obj mem)))
-  (make-cstruct-type struct-members))
+  (if (null? struct-members) #f
+  (make-cstruct-type struct-members)))
 
 (define (make-ffi-union ct-union)
   (define union-members
     (for/list ([mem (dffi:ctype-record-members ct-union)])
       (make-dffi-obj mem)))
-  (apply make-union-type union-members))
+  (if (null? union-members) #f
+    (apply make-union-type union-members)))
 
 (define (make-ffi-function ct-function)
   (define params
@@ -80,33 +82,35 @@
    (error "void only allowed as pointer or function return")]
   [else (error "unimplemented type")]))
 
-(define (build-ffi-obj-map header lib)
-  (unless (file-exists? header)
-    (error "file does not exist: " header))
+(define (build-ffi-obj-map lib . headers)
   (unless
     (or (file-exists? (string-append lib ".so"))
         (file-exists? (string-append lib ".a"))
         (file-exists? (string-append lib ".dylib"))
         (file-exists? (string-append lib ".dll")))
     (error "file does not exist: " lib))
-  (define ffi-data (dffi:dynamic-ffi-parse header))
-  (make-hash
+  (define ffi-data (apply dffi:dynamic-ffi-parse headers))
+  (define pairs
     (for/list ([decl ffi-data])
       (define name (dffi:declaration-name decl))
       (define type (dffi:declaration-type decl))
-      (cons (string->symbol name)
-            (get-ffi-obj name lib (make-dffi-obj type)
-               (λ () (error "lib " lib " does not contain " name)))))))
+      (define ffi-obj
+        (if (dffi:enum-decl? decl)
+          (dffi:declaration-literal-value decl)
+          (get-ffi-obj name lib (make-dffi-obj type)
+            (λ () (printf "~a  does not contain ~a\n" lib name)))))
+      (cons (string->symbol name) ffi-obj)))
+  (filter (λ (x) x) pairs))
 
 (define-syntax (define-dynamic-ffi stx)
   (syntax-case stx ()
-    [(_ id header lib)
+    [(_ id lib header ...)
      (with-syntax
        ([obj-map (format-id #'id "~a-obj-map" (syntax->datum #'id))]
         [obj-ref (format-id #'id "~a-obj-ref" (syntax->datum #'id))]
         [obj-run (format-id #'id"~a-funcall" (syntax->datum #'id))])
        #'(define-values (obj-map obj-ref obj-run)
-           (values (build-ffi-obj-map header lib)
+           (values (build-ffi-obj-map lib header ...)
                    (λ (elem) (hash-ref obj-map elem))
                    (λ (elem . params)
                      (apply (hash-ref obj-map elem) params )))))]))

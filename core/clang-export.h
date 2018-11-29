@@ -24,6 +24,7 @@ typedef enum {
   TYPEDEF,
 } c_type_id;
 
+
 typedef enum {
   FUNCTION_DECL,
   GLOBAL_VAR_DECL,
@@ -50,6 +51,7 @@ typedef struct {
   c_decl_id base;
   c_type ctype;
   char *type_str;
+  void *val;
 } c_decl;
 
 typedef struct {
@@ -61,10 +63,10 @@ inline c_type *c_type_pointer_deref(c_type *t) {
   return t->fields;
 }
 
-c_decl make_global_var_decl(char* name, c_type ctype, char* type_str);
-c_decl make_record_decl(char* name, c_type ctype, char* type_str);
-c_decl make_function_decl(char* name, c_type ctype, char* type_str);
-c_decl make_enum_decl(char* name, c_type ctype, char* type_str);
+c_decl make_global_var_decl(char* name, c_type ctype, char* type_str, void *val);
+c_decl make_record_decl(char* name, c_type ctype, char* type_str, void *val);
+c_decl make_function_decl(char* name, c_type ctype, char* type_str, void *val);
+c_decl make_enum_decl(char* name, c_type ctype, char* type_str, void *val);
 
 c_type make_signed_int_c_type(uint64_t width, int is_const, int is_volatile);
 c_type make_unsigned_int_c_type(uint64_t width, int is_const, int is_volatile);

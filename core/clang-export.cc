@@ -95,6 +95,9 @@ void free_decl(c_decl d) {
   c_type * t = &(d.ctype);
   free(d.name);
   free(d.type_str);
+  if (d.val != NULL) {
+    free(d.val);
+  }
   c_type_free_fields(t);
 }
 
@@ -121,42 +124,46 @@ void string_append(char **dest, const char *src,
   (*dest)[*length] = '\0';
 }
 
-c_decl make_global_var_decl(char* name, c_type ctype, char* type_str) {
+c_decl make_global_var_decl(char* name, c_type ctype, char* type_str, void *val) {
   c_decl d;
   d.name = name;
   d.base = GLOBAL_VAR_DECL;
   d.ctype = ctype;
   d.type_str = type_str;
+  d.val = val;
 
   return d;
 }
 
-c_decl make_record_decl(char* name, c_type ctype, char* type_str) {
+c_decl make_record_decl(char* name, c_type ctype, char* type_str, void * val) {
   c_decl d;
   d.name = name;
   d.base = RECORD_DECL;
   d.ctype = ctype;
   d.type_str = type_str;
+  d.val = val;
 
   return d;
 }
 
-c_decl make_function_decl(char* name, c_type ctype, char* type_str) {
+c_decl make_function_decl(char* name, c_type ctype, char* type_str, void *val) {
   c_decl d;
   d.name = name;
   d.base = FUNCTION_DECL;
   d.ctype = ctype;
   d.type_str = type_str;
+  d.val = val;
 
   return d;
 }
 
-c_decl make_enum_decl(char* name, c_type ctype, char* type_str) {
+c_decl make_enum_decl(char* name, c_type ctype, char* type_str, void *val) {
   c_decl d;
   d.name = name;
   d.base = ENUM_DECL;
   d.ctype = ctype;
   d.type_str = type_str;
+  d.val = val;
 
   return d;
 }
