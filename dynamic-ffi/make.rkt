@@ -76,13 +76,17 @@
   (define cwd (current-directory))
   (current-directory shared-object-dir)
   (when (timestamp<? dynamic-ffi_3m.o dynamic-ffi.c)
-    (printf "~a" dynamic-ffi.c)
-    (system (format "raco ctool --xform ~a" dynamic-ffi.c))
-    (printf "making object\n")
-    (system (format "raco ctool --3m --cc ~a" dynamic-ffi.3m.c)))
-  (printf "making extension\n")
-  (system (format "raco ctool --3m --ld ~a ~a ~a"
+    (define ctool-xform (format "raco ctool --xform ~a" dynamic-ffi.c))
+    (define ctool-3m (format "raco ctool --3m --cc ~a" dynamic-ffi.3m.c))
+    (printf "~a\n" ctool-xform)
+    (system ctool-xform)
+    (printf "making object\n~a\n" ctool-3m)
+    (system ctool-3m))
+  (define ctool-ld
+    (format "raco ctool --3m --ld ~a ~a ~a"
             dynamic-ffi-core_rkt.so dynamic-ffi_3m.o clang-export.so))
+  (printf "making extension\n~a\n" ctool-ld)
+  (system ctool-ld)
   (current-directory cwd))
 
 (define (post-installer x)
