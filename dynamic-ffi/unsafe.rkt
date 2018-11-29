@@ -88,7 +88,7 @@
         (file-exists? (string-append lib ".a"))
         (file-exists? (string-append lib ".dylib"))
         (file-exists? (string-append lib ".dll")))
-    (error "file does not exist: " lib))
+    (error "file does not exist: " (string-append lib ".so")))
   (define ffi-data (apply dffi:dynamic-ffi-parse headers))
   (define pairs
     (for/list ([decl ffi-data])
@@ -98,17 +98,18 @@
         (if (dffi:enum-decl? decl)
           (dffi:declaration-literal-value decl)
           (get-ffi-obj name lib (make-dffi-obj type)
-            (λ () (printf "~a  does not contain ~a\n" lib name)))))
+            (λ () (printf "~a  does not contain ~a\n" lib name) #f))))
       (cons (string->symbol name) ffi-obj)))
-  (filter (λ (x) x) pairs))
+  (make-hash
+    (filter (λ (x) (cdr x)) pairs)))
 
 (define-syntax (define-dynamic-ffi stx)
   (syntax-case stx ()
     [(_ id lib header ...)
      (with-syntax
-       ([obj-map (format-id #'id "~a-obj-map" (syntax->datum #'id))]
-        [obj-ref (format-id #'id "~a-obj-ref" (syntax->datum #'id))]
-        [obj-run (format-id #'id"~a-funcall" (syntax->datum #'id))])
+       ([obj-map (format-id #'id "~a" (syntax->datum #'id))]
+        [obj-ref (format-id #'id "~a-ref" (syntax->datum #'id))]
+        [obj-run (format-id #'id "~a-fncall" (syntax->datum #'id))])
        #'(define-values (obj-map obj-ref obj-run)
            (values (build-ffi-obj-map lib header ...)
                    (λ (elem) (hash-ref obj-map elem))

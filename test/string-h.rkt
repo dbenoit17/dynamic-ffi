@@ -12,10 +12,10 @@
 
 
 ;; Builds an auto-ffi
-(define-dynamic-ffi string.h "/usr/include/string.h" "/usr/lib64/libc-2.28")
+(define-dynamic-ffi string.h "/usr/lib64/libc-2.28" "/usr/include/string.h")
 
 ;; Call strcat from built ffi
-(define strcat-result (string.h-funcall 'strcat string1 string2))
+(define strcat-result (string.h-fncall 'strcat string1 string2))
 
 
 (printf "string1+string2\n  \"~a\"\n" string1+string2)
