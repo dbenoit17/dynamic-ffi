@@ -45,10 +45,11 @@ private:
   ffiAccumulator &accumulator;
   CompilerInstance &compiler;
   bool deep_parse;
+  dhgc_block * shm_block;
 public:
   ffiASTConsumer(ffiAccumulator &accumulator,
-     CompilerInstance &compiler, bool deep_parse)
-   : accumulator(accumulator), compiler(compiler), deep_parse(deep_parse) {}
+     CompilerInstance &compiler, bool deep_parse, dhgc_block *shm_block)
+   : accumulator(accumulator), compiler(compiler), deep_parse(deep_parse), shm_block(shm_block) {}
   bool HandleTopLevelDecl(DeclGroupRef decls) override;
   bool topLevelHeaderContains(Decl *d);
   c_decl make_decl_from_global_var(const Decl *d);
@@ -63,32 +64,34 @@ public:
 
 class ffiPluginAction : public ASTFrontendAction {
 public:
-  ffiPluginAction(ffiAccumulator &accumulator, bool deep_parse)
-    : accumulator(accumulator), deep_parse(deep_parse) {}
+  ffiPluginAction(ffiAccumulator &accumulator, bool deep_parse, dhgc_block * shm_block)
+    : accumulator(accumulator), deep_parse(deep_parse), shm_block(shm_block) {}
 protected:
   ffiAccumulator &accumulator;
   bool deep_parse;
+  dhgc_block * shm_block;
   std::unique_ptr<ASTConsumer>
     CreateASTConsumer(CompilerInstance &compiler,
                       llvm::StringRef) override {
-      return llvm::make_unique<ffiASTConsumer>(accumulator, compiler, deep_parse);
+      return llvm::make_unique<ffiASTConsumer>(accumulator, compiler, deep_parse, shm_block);
     }
 };
 
 template <typename T>
 std::unique_ptr<FrontendActionFactory>
-newFFIActionFactory(ffiAccumulator &accumulator, bool deep_parse) {
+newFFIActionFactory(ffiAccumulator &accumulator, bool deep_parse, dhgc_block *shm_block) {
   class ffiActionFactory : public FrontendActionFactory {
     ffiAccumulator &accumulator;
     bool deep_parse;
+    dhgc_block * shm_block;
   public:
-    ffiActionFactory(ffiAccumulator &accumulator, bool deep_parse)
-      : accumulator(accumulator), deep_parse(deep_parse) {}
+    ffiActionFactory(ffiAccumulator &accumulator, bool deep_parse, dhgc_block *shm_block)
+      : accumulator(accumulator), deep_parse(deep_parse), shm_block(shm_block){}
     FrontendAction *create() override {
-      return new T(accumulator, deep_parse);
+      return new T(accumulator, deep_parse, shm_block);
     }
   };
-  return std::unique_ptr<FrontendActionFactory>(new ffiActionFactory(accumulator, deep_parse));
+  return std::unique_ptr<FrontendActionFactory>(new ffiActionFactory(accumulator, deep_parse, shm_block));
 }
 
 } /* end plugin namespace */

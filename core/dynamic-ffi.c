@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,15 +42,21 @@ Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object **scheme_argv) {
   c_decl_array decls;
   char ** argv;
   int i;
+  size_t gc_mem_limit;
+  dhgc_block shm_block;
 
-  argv = malloc(sizeof (char*) * argc);
+  argv = malloc(sizeof (char*) * argc -1);
 
-  for (i = 0; i < argc; ++i) {
+  gc_mem_limit = SCHEME_INT_VAL(scheme_argv[argc -1]);
+  dhgc_init(&shm_block, gc_mem_limit);
+
+  for (i = 0; i < argc - 1; ++i) {
     argv[i] = SCHEME_BYTE_STR_VAL(scheme_argv[i]);
   }
 
   declarations = scheme_null;
-  decls = ffi_parse(argc, argv);
+
+  decls = ffi_parse(gc_mem_limit, &shm_block, argc - 1 , argv);
 
   for (i = 0; i < decls.length; ++i) {
     Scheme_Object *decl_scheme;
@@ -62,7 +67,7 @@ Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object **scheme_argv) {
   }
 
   free(argv);
-  free_decl_array(decls);
+  dhgc_destroy(&shm_block);
   return declarations;
 }
 

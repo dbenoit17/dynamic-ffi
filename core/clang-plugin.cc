@@ -3,7 +3,6 @@
 /* https://clang.llvm.org/doxygen/classclang_1_1Type.html
    https://clang.llvm.org/doxygen/classclang_1_1TargetInfo.html */
 
-//#define DYNAMIC_FFI_DEBUG
 
 #ifdef DYNAMIC_FFI_DEBUG
   #define __debug(z)  z
@@ -61,14 +60,14 @@ bool ffi::ffiASTConsumer::topLevelHeaderContains(Decl *d) {
 c_decl ffi::ffiASTConsumer::make_decl_from_enum_constant(const Decl *dec) {
    const EnumConstantDecl  *d = dyn_cast<EnumConstantDecl>(dec);
 
+   const char* st = "enum";
    std::string cxx_name = d->getNameAsString();
-   char* st = "enum";
-   char *name = (char*) malloc(sizeof(char*) * (cxx_name.length() + 1));
-   char *type_str = (char*) malloc(sizeof(char*) * (strlen(st)+ 1));
+   char *name = (char*) dhgc_alloc(this->shm_block, sizeof(char*) * (cxx_name.length() + 1));
+   char *type_str = (char*) dhgc_alloc(this->shm_block, sizeof(char*) * (strlen(st)+ 1));
    strcpy(name, cxx_name.c_str());
    strcpy(type_str, st);
 
-   int64_t * value = (int64_t*) malloc(sizeof(int64_t));
+   int64_t * value = (int64_t*) dhgc_alloc(this->shm_block, sizeof(int64_t));
 
    *value = d->getInitVal().getExtValue();
    c_type ctype;
@@ -80,10 +79,10 @@ c_decl ffi::ffiASTConsumer::make_decl_from_enum_constant(const Decl *dec) {
 c_decl ffi::ffiASTConsumer::make_decl_from_function(const Decl *dec) {
    const FunctionDecl  *d = dyn_cast<FunctionDecl>(dec);
 
+   const char* st = "function";
    std::string cxx_name = d->getNameAsString();
-   char* st = "function";
-   char *name = (char*) malloc(sizeof(char*) * (cxx_name.length() + 1));
-   char *type_str = (char*) malloc(sizeof(char*) * (strlen(st)+ 1));
+   char *name = (char*) dhgc_alloc(this->shm_block, sizeof(char*) * (cxx_name.length() + 1));
+   char *type_str = (char*) dhgc_alloc(this->shm_block, sizeof(char*) * (strlen(st)+ 1));
    strcpy(name, cxx_name.c_str());
    strcpy(type_str, st);
 
@@ -95,10 +94,10 @@ c_decl ffi::ffiASTConsumer::make_decl_from_function(const Decl *dec) {
 c_decl ffi::ffiASTConsumer::make_decl_from_record(const Decl *dec) {
    const RecordDecl  *d = dyn_cast<RecordDecl>(dec);
 
+   const char* st = "record";
    std::string cxx_name = d->getNameAsString();
-   char* st = "struct";
-   char *name = (char*) malloc(sizeof(char*) * (cxx_name.length() + 1));
-   char *type_str = (char*) malloc(sizeof(char*) * (strlen(st)+ 1));
+   char *name = (char*) dhgc_alloc(this->shm_block, sizeof(char*) * (cxx_name.length() + 1));
+   char *type_str = (char*) dhgc_alloc(this->shm_block, sizeof(char*) * (strlen(st)+ 1));
    strcpy(name, cxx_name.c_str());
    strcpy(type_str, st);
 
@@ -114,8 +113,8 @@ c_decl ffi::ffiASTConsumer::make_decl_from_global_var(const Decl *dec) {
 
    std::string cxx_name = d->getNameAsString();
    std::string cxx_type = type.getAsString();
-   char *name = (char*) malloc(sizeof(char*) * (cxx_name.length() + 1));
-   char *type_str= (char*) malloc(sizeof(char*) * (cxx_type.length() + 1));
+   char *name = (char*) dhgc_alloc(this->shm_block, sizeof(char*) * (cxx_name.length() + 1));
+   char *type_str= (char*) dhgc_alloc(this->shm_block, sizeof(char*) * (cxx_type.length() + 1));
    strcpy(name, cxx_name.c_str());
    strcpy(type_str, cxx_type.c_str());
 
@@ -142,7 +141,7 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
     RecordDecl *rd = type->getAs<clang::RecordType>()->getDecl();
     for (auto i = rd->field_begin(); i != rd->field_end(); i++, field_length++);
 
-    c_type* fields = (c_type*) malloc(sizeof(c_type) * field_length);
+    c_type* fields = (c_type*) dhgc_alloc(this->shm_block, sizeof(c_type) * field_length);
     for (auto i = rd->field_begin(); i != rd->field_end(); i++) {
       QualType field_type = i->getType();
       uint64_t field_width = rd->getASTContext().getTypeInfo(field_type).Width;
@@ -186,6 +185,7 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
      __debug(type->dump());
      QualType pointee = type->getPointeeType();
      const clang::Type * pt = pointee.getTypePtr()->getUnqualifiedDesugaredType();
+     c_type cpt;
      if (pt->isRecordType()) {
        __debug(pt->dump());
        RecordDecl *rd = pointee->getAs<clang::RecordType>()->getDecl();
@@ -197,18 +197,21 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
        }
        int p_is_const = pointee.isConstQualified();
        int p_is_volatile = pointee.isVolatileQualified();
-       ctype = make_pointer_c_type(make_void_c_type(width, p_is_const, p_is_volatile),
-                   is_const, is_volatile, is_restrict, width);
+       cpt = make_void_c_type(width, p_is_const, p_is_volatile);
      }
      else {
-       ctype = make_pointer_c_type(dispatch_on_type(pointee, d), is_const, is_volatile, is_restrict, width);
+       cpt = dispatch_on_type(pointee, d);
      }
+     c_type * temp = (c_type*) dhgc_alloc(this->shm_block, sizeof(c_type));
+     memcpy(temp, &cpt, sizeof(c_type));
+     ctype = make_pointer_c_type(temp, is_const, is_volatile, is_restrict, width);
    }
 
    else if (type->isArrayType()) {
      __debug(type->dump());
      QualType pointee = type->getAsArrayTypeUnsafe()->getElementType();
      const clang::Type * pt = pointee.getTypePtr()->getUnqualifiedDesugaredType();
+     c_type element;
      if (pt->isRecordType()) {
        __debug(pt->dump());
        RecordDecl *rd = pointee->getAs<clang::RecordType>()->getDecl();
@@ -220,12 +223,14 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
        }
        int p_is_const = pointee.isConstQualified();
        int p_is_volatile = pointee.isVolatileQualified();
-       ctype = make_array_c_type(make_void_c_type(width, p_is_const, p_is_volatile),
-                   is_const, is_volatile, is_restrict, width);
+       element = make_void_c_type(width, p_is_const, p_is_volatile);
      }
      else {
-       ctype = make_array_c_type(dispatch_on_type(pointee, d), is_const, is_volatile, is_restrict, width);
+       element = dispatch_on_type(pointee, d);
      }
+     c_type * temp = (c_type*) dhgc_alloc(this->shm_block, sizeof(c_type));
+     memcpy(temp, &element, sizeof(c_type));
+     ctype = make_array_c_type(temp, is_const, is_volatile, is_restrict, width);
    }
    else if (type->isVoidType()) {
      __debug(type->dump());
@@ -238,7 +243,7 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
     const FunctionProtoType *fptype = type->getAs<clang::FunctionProtoType>();
     int field_length = fptype->getNumParams() + 1;;
 
-    c_type* fields = (c_type*) malloc(sizeof(c_type) * field_length);
+    c_type* fields = (c_type*) dhgc_alloc(this->shm_block, sizeof(c_type) * field_length);
     fields[0] = dispatch_on_type(fptype->getReturnType(), d);
     for (int i = 0; i < field_length - 1; ++i) {
       QualType field_type = fptype->getParamTypes()[i];

@@ -2,9 +2,12 @@
 
 (require
   ffi/unsafe
-  (for-syntax racket/base
-              racket/syntax)
-  (prefix-in dffi: "meta.rkt"))
+  (prefix-in dffi: "meta.rkt")
+  syntax/parse
+  (for-syntax
+    racket/base
+    syntax/parse
+    racket/syntax))
 
 (provide (all-defined-out)
          (all-from-out ffi/unsafe))
@@ -82,11 +85,11 @@
    (error "void only allowed as pointer or function return")]
   [else (error "unimplemented type")]))
 
-(define (build-ffi-obj-map lib . headers)
+(define (build-ffi-obj-map lib #:clang-mem-limit [mem-limit dffi:default-mem-limit] . headers)
   (unless (for/or ([ext '(".so" ".dylib" ".dll")])
             (file-exists? (string-append lib ext)))
     (error "file does not exist: " (string-append lib ".so")))
-  (define ffi-data (apply dffi:dynamic-ffi-parse headers))
+  (define ffi-data (apply dffi:dynamic-ffi-parse (cons mem-limit headers)))
   (define pairs
     (for/list ([decl ffi-data])
       (define name (dffi:declaration-name decl))
@@ -100,15 +103,18 @@
   (make-hash
     (filter (λ (x) (cdr x)) pairs)))
 
+
+
 (define-syntax (define-dynamic-ffi stx)
-  (syntax-case stx ()
-    [(_ id lib header ...)
+  (syntax-parse stx
+    [(_  id file ...)
      (with-syntax
        ([obj-map (format-id #'id "~a" (syntax->datum #'id))]
         [obj-ref (format-id #'id "~a-ref" (syntax->datum #'id))]
         [obj-run (format-id #'id "~a-fncall" (syntax->datum #'id))])
        #'(define-values (obj-map obj-ref obj-run)
-           (values (build-ffi-obj-map lib header ...)
+           (values
+              (build-ffi-obj-map file ...)
                    (λ (elem) (hash-ref obj-map elem))
                    (λ (elem . params)
                      (apply (hash-ref obj-map elem) params )))))]))

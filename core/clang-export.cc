@@ -1,3 +1,6 @@
+#include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
 #include <string>
 #include <vector>
 #include <set>
@@ -24,59 +27,75 @@ using namespace ffi;
 
 static llvm::cl::OptionCategory MyToolCategory("my-tool options");
 
-c_decl_array dynamic_ffi_parse(int argc, const char **argv, int deep_parse) {
+c_decl_array dynamic_ffi_parse(size_t gc_mem_limit, dhgc_block *shm_block, int argc, const char **argv, int deep_parse) {
+
+  c_decl **declarations = (c_decl**) dhgc_alloc(shm_block, sizeof(c_decl*));
+  uint64_t * decls_length = (uint64_t*) dhgc_alloc(shm_block, sizeof(uint64_t*));
+
+/* Clang libs seem to make lots of assumptions
+   that they own the entire process space.
+   It seems like the libraries are designed
+   with the idea that they would generally
+   not be used in an interactive context.
+   Linking with clang seems to cause major
+   tty issues.  Forking the clang procedures
+   into their own process space is the best
+   solution so far. */
+
+  pid_t pid;
+  pid = fork();
+  if (pid < 0) {
+    printf("could not fork\n");
+  }
+  else if (pid == 0) {
   /* CommonOptionsParser has some external
      static caching going on which results
      in duplication/memory leaks of file header names.
      We must build our own compilation database
      and source list if we expect multiple calls
      to dynamic_ffi_parse(...) */
-  FixedCompilationDatabase *DB =
-    new FixedCompilationDatabase(".", std::vector<std::string>());
-  std::vector<std::string> source_list;
-  for (int i = 1; i < argc; ++i) {
-    unsigned len = strlen(argv[i]);
-    SmallString<sizeof(char)> st(argv[i], argv[i] + sizeof(char) *len);
-    sys::fs::make_absolute(st);
-    source_list.push_back(st.str());
+      FixedCompilationDatabase *DB =
+        new FixedCompilationDatabase(".", std::vector<std::string>());
+      std::vector<std::string> source_list;
+      for (int i = 1; i < argc; ++i) {
+        unsigned len = strlen(argv[i]);
+        SmallString<sizeof(char)> st(argv[i], argv[i] + sizeof(char) *len);
+        sys::fs::make_absolute(st);
+        source_list.push_back(st.str());
+      }
+
+      ClangTool tool(*DB, (ArrayRef<std::string>) source_list);
+
+      ffiAccumulator acc(source_list);
+
+      std::vector<c_decl> vdecls;
+      tool.run(newFFIActionFactory<ffiPluginAction>(acc, deep_parse, shm_block).get());
+      vdecls = acc.get_c_decls();
+      *decls_length = vdecls.size();
+      *declarations = (c_decl*) dhgc_alloc(shm_block, sizeof(c_decl) * (*decls_length));
+      std::copy(vdecls.begin(), vdecls.end(), *declarations);
+      delete DB;
+      exit(0);
+  }
+  else {
+    wait(NULL);
   }
 
-  ClangTool tool(*DB, (ArrayRef<std::string>) source_list);
-
-  /* Accumulator object for gathered metadata.
-     Should not contain the source list.
-     It's just too convenient. */
-  ffiAccumulator acc(source_list);
-
-  // Run the tool
-  int ret = tool.run(newFFIActionFactory<ffiPluginAction>(acc, deep_parse).get());
-/*  if (! (ret || true)) {
-    std::cout << "Dynamic ffi encountered an error.  Clang returned exit code: " << ret
-         << "See Clang output for more details.  Exiting...\n";
-    exit(ret);
-  } */
-  printf("parse complete\n");
-
-  std::vector<c_decl> vdecls = acc.get_c_decls();
-  c_decl * declarations = (c_decl*) malloc(sizeof(c_decl) * vdecls.size());
-  std::copy(vdecls.begin(), vdecls.end(), declarations);
-
   // Cleanup
-  delete DB;
 
-  return { vdecls.size(), declarations };
+  return { *decls_length, *declarations };
 }
 
 extern "C" {
 
 // Parse only the headers specified in argv[1:]
-c_decl_array ffi_parse(int argc, const char **argv) {
-  return dynamic_ffi_parse(argc, argv, false);
+c_decl_array ffi_parse(size_t gc_mem_limit, dhgc_block *shm_block, int argc, const char **argv) {
+  return dynamic_ffi_parse(gc_mem_limit, shm_block, argc, argv, false);
 }
 
 // Parse nested includes too
-c_decl_array ffi_deep_parse(int argc, const char **argv) {
-  return dynamic_ffi_parse(argc, argv, true);
+c_decl_array ffi_deep_parse(size_t gc_mem_limit, dhgc_block *shm_block, int argc, const char **argv) {
+  return dynamic_ffi_parse(gc_mem_limit, shm_block, argc, argv, true);
 }
 
 void c_type_free_fields(c_type *t) {
@@ -107,21 +126,6 @@ void free_decl_array(c_decl_array a) {
     free_decl(a.data[i]);
   }
   free(a.data);
-}
-
-void string_append(char **dest, const char *src,
-                   unsigned int *length, unsigned int *size) {
-  unsigned int srclen = strlen(src);
-  if (*size <= (*length * sizeof(char) +srclen)) {
-    char *temp = (char*) malloc(sizeof(char) * (*size) *2);
-    *size = *size *2 - 1;
-    strcpy(temp, *dest);
-    free(*dest);
-    *dest = temp;
-  }
-  strcpy(&((*dest)[*length]), src);
-  *length += srclen;
-  (*dest)[*length] = '\0';
 }
 
 c_decl make_global_var_decl(char* name, c_type ctype, char* type_str, void *val) {
@@ -244,12 +248,11 @@ c_type make_void_c_type(uint64_t width, int is_const, int is_volatile) {
     return t;
 }
 
-c_type make_pointer_c_type(c_type type, int is_const, int is_volatile, int is_restrict, uint64_t width) {
+c_type make_pointer_c_type(c_type * type, int is_const, int is_volatile, int is_restrict, uint64_t width) {
   c_type t;
   t.base = POINTER;
-  t.fields = (c_type*) malloc(sizeof(c_type));
+  t.fields = type;
   t.has_fields = 1;
-  memcpy(t.fields, &type, sizeof(c_type));
   t.field_length = 1;
   t.is_signed = 0;
   t.is_literal = 0;
@@ -259,12 +262,11 @@ c_type make_pointer_c_type(c_type type, int is_const, int is_volatile, int is_re
   t.width = width;
   return t;
 }
-c_type make_array_c_type(c_type type, int is_const, int is_volatile, int is_restrict, uint64_t width) {
+c_type make_array_c_type(c_type * type, int is_const, int is_volatile, int is_restrict, uint64_t width) {
   c_type t;
   t.base = ARRAY;
-  t.fields = (c_type*) malloc(sizeof(c_type));
+  t.fields = type;
   t.has_fields = 1;
-  memcpy(t.fields, &type, sizeof(c_type));
   t.field_length = 1;
   t.is_signed = 0;
   t.is_literal = 0;

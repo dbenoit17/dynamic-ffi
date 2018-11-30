@@ -1,10 +1,12 @@
 #lang racket/base
 
 (require racket/list
+         racket/stxparam
          "dynamic-ffi-core.rkt")
 
 (provide declaration
          (all-from-out 'ctype-defs)
+         default-mem-limit
          (rename-out
            [dynamic-ffi-wrapper
            dynamic-ffi-parse]))
@@ -31,7 +33,10 @@
 
 (require 'ctype-defs)
 
-(define (dynamic-ffi-wrapper . files-list)
+(define default-mem-limit 5600000)
+
+
+(define (dynamic-ffi-wrapper mem-limit . files-list)
   (define (path->byte-string path)
     (cond [(bytes? path) path]
           [(string? path) (string->bytes/locale path)]
@@ -44,7 +49,8 @@
       (path->byte-string path)))
   (define c-decls-list
     (apply dynamic-ffi-parse
-      (cons #"dynamic-ffi-parse" byte-string-paths)))
+      (flatten
+        (list #"dynamic-ffi-parse"  byte-string-paths mem-limit))))
   (map make-declaration c-decls-list))
 
 ;; Where d is a list obtained from dynamic-ffi-parse

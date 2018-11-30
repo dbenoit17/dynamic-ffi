@@ -2,6 +2,7 @@
 
 (require
   racket/list
+  racket/stxparam
   "../dynamic-ffi/unsafe.rkt")
 
 (provide (all-defined-out))
@@ -12,6 +13,7 @@
 
 ;; Builds an auto-ffi
 (define-dynamic-ffi libc
+  ;;#:mem-limit 3000
   "/usr/lib64/libc-2.28"
   "/usr/include/string.h"
   "/usr/include/stdio.h"
