@@ -1,4 +1,4 @@
 all:
-	racket dynamic-ffi/make.rkt
+	racket make.rkt
 clean:
-	rm -rf dynamic-ffi/compiled/native
+	rm -rf compiled/native

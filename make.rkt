@@ -92,7 +92,7 @@
   (system ctool-ld)
   (current-directory cwd))
 
-(define (post-installer x)
+(define (pre-installer x)
   (unless (directory-exists? dynamic-extension-dir)
     (make-directory* dynamic-extension-dir))
   (make-ffi-shared-lib clang-plugin.so clang-plugin.cc)
@@ -100,5 +100,5 @@
   (make-native-libs))
 
 (module+ main
-  (post-installer #t))
+  (pre-installer #t))
 

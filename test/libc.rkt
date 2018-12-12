@@ -3,7 +3,7 @@
 (require
   racket/list
   racket/stxparam
-  "../dynamic-ffi/unsafe.rkt")
+  "../unsafe.rkt")
 
 (provide (all-defined-out))
 

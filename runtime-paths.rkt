@@ -6,18 +6,17 @@
 
 (provide (all-defined-out))
 
-
 (define-runtime-path dynamic-ffi.c
-  (build-path ".." "core" "dynamic-ffi.c"))
+  (build-path "core" "dynamic-ffi.c"))
 
 (define-runtime-path dynamic-ffi.3m.c
-  (build-path ".." "core" "dynamic-ffi.3m.c"))
+  (build-path "core" "dynamic-ffi.3m.c"))
 
 (define-runtime-path clang-plugin.cc
-  (build-path ".." "core" "clang-plugin.cc"))
+  (build-path "core" "clang-plugin.cc"))
 
 (define-runtime-path clang-export.cc
-  (build-path ".." "core" "clang-export.cc"))
+  (build-path "core" "clang-export.cc"))
 
 (define-runtime-path dynamic-extension-dir
  (build-path "compiled" "native" (system-library-subpath)))
@@ -46,5 +45,5 @@
 
 ;; Test Paths
 (define-runtime-path dynamic-ffi-tests
-  (build-path ".." "test"))
+  (build-path "test"))
 
