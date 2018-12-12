@@ -2,7 +2,7 @@
 
 (require
   racket/list
-  "../dynamic-ffi/unsafe.rkt")
+  "../unsafe.rkt")
 
 
 ;; Builds an auto-ffi

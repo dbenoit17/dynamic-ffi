@@ -2,7 +2,7 @@
 
 (require
   racket/list
-  "../dynamic-ffi/unsafe.rkt")
+  "../unsafe.rkt")
 
 
 (define string1 "hello")
@@ -31,5 +31,4 @@
 ; (string.h-funcall 'strcat string1 string2)
 ;   "hello world"
 ; strings equal?: #t
-
 
