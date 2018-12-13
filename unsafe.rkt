@@ -34,7 +34,11 @@
         [(and (dffi:ctype-int? pointee)
               (eq? (dffi:ctype-width pointee) 8))
          _string]
-        [else (_cpointer (make-dffi-obj pointee))]))
+        ;; all pointers opaque for now to
+        ;; prevent type conflicts 
+        [else _pointer]))
+        ;; would be cool to do it this way
+        ;;[else (_cpointer (make-dffi-obj pointee))]))
 
 (define (make-ffi-array ct-array)
   (define element (dffi:ctype-array-element ct-array))
