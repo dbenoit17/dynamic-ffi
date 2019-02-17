@@ -99,7 +99,7 @@
         (if (dffi:enum-decl? decl)
           (dffi:declaration-literal-value decl)
           (get-ffi-obj name lib (make-dffi-obj type)
-            (λ () (printf "~a  does not contain ~a\n" lib name) #f))))
+            (λ () (printf "warning: ~a does not contain declared symbol ~a\n" lib name) #f))))
       (cons (string->symbol name) ffi-obj)))
   (make-hash
     (filter (λ (x) (cdr x)) pairs)))
