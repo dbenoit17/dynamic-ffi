@@ -229,7 +229,6 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
    }
    else if (type->isVoidType()) {
      __debug(type->dump());
-     QualType pointee = type->getAsArrayTypeUnsafe()->getElementType();
      ctype = make_void_c_type(0,0,0);
    }
 
