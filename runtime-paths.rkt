@@ -12,6 +12,9 @@
 (define-runtime-path dynamic-ffi.3m.c
   (build-path "core" "dynamic-ffi.3m.c"))
 
+(define-runtime-path wrap-fork.c
+  (build-path "core" "wrap-fork.c"))
+
 (define-runtime-path clang-plugin.cc
   (build-path "core" "clang-plugin.cc"))
 
@@ -26,6 +29,10 @@
 
 (define-runtime-path dynamic-ffi_3m.o
   (build-path "compiled" "native" "dynamic-ffi_3m.o"))
+
+(define-runtime-path wrap-fork.so
+  (build-path "compiled" "native"
+    (path-add-suffix "wrap-fork" (system-type 'so-suffix))))
 
 (define-runtime-path clang-plugin.so
   (build-path "compiled" "native"

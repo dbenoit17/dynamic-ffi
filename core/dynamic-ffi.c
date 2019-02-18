@@ -2,12 +2,12 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
 
-
 #include "escheme.h"
+
 #include "clang-export.h"
+#include "wrap-fork.h"
 
 const int struct_flags = SCHEME_STRUCT_NO_MAKE_PREFIX;
 Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object ** argv);
@@ -19,9 +19,6 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   Scheme_Object * parse_prim;
 
   mod_env = scheme_primitive_module(scheme_intern_symbol("dynamic-ffi-core"), env);
-
-
-  //scheme_debug_print(scheme_make_utf8_string("parsing complete\n"));
 
   parse_prim = scheme_make_prim_w_arity(dynamic_ffi_parse, "dynamic-ffi-parse", 1, -1);
   scheme_add_global("dynamic-ffi-parse", parse_prim, mod_env);
@@ -51,7 +48,8 @@ Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object **scheme_argv) {
   }
 
   declarations = scheme_null;
-  decls = ffi_parse(argc, argv);
+
+  decls = fork_ffi_parse(argc, argv);
 
   for (i = 0; i < decls.length; ++i) {
     Scheme_Object *decl_scheme;

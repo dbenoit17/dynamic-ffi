@@ -47,11 +47,12 @@ typedef struct c_type {
 } c_type;
 
 typedef struct {
-  char *name;
   c_decl_id base;
-  c_type ctype;
+  char *name;
   char *type_str;
+  size_t val_size;
   void *val;
+  c_type ctype;
 } c_decl;
 
 typedef struct {
@@ -88,9 +89,6 @@ void c_type_free_field(c_type *t);
 
 void string_append(char **dest, const char *src,
                    unsigned int *length, unsigned int *size);
-
-char* format_decl(c_decl d);
-void print_decl(c_decl d);
 
 /* These functions should not be available to the plugin*/
 #ifndef DYNAMIC_FFI_PLUGIN_H

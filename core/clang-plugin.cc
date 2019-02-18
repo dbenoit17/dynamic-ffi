@@ -86,6 +86,7 @@ c_decl ffi::ffiASTConsumer::make_decl_from_function(const Decl *dec) {
    char *type_str = (char*) malloc(sizeof(char*) * (strlen(st)+ 1));
    strcpy(name, cxx_name.c_str());
    strcpy(type_str, st);
+   __debug(printf("%s\n", name);)
 
    c_type ctype = dispatch_on_type(d->getType(), dec);
 

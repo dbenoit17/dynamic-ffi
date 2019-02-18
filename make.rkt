@@ -11,7 +11,8 @@
 
 (define cc "clang++")
 (define ldflags+= "-shared -Wl,-undefined,dynamic_lookup")
-(define cxxflags+= "-fno-rtti -fPIC")
+(define cflags+= "-fPIC")
+(define cxxflags+= "-fno-rtti -O2")
 (define lflags+=
  (string-join
   (list "-lclangAST"
@@ -59,7 +60,7 @@
 (define-syntax-rule (make-ffi-shared-lib out-path in ...)
  (let ([make-plugin-cmd
         (format-append cc "-v" in ... (get-llvm-config)
-          lflags+= "-o" out-path cxxflags+= ldflags+=)])
+          lflags+= "-o" out-path cflags+= cxxflags+= ldflags+=)])
    (unless
      (and (file-exists? out-path)
        (for/and ([i (list in ...)])
@@ -95,8 +96,9 @@
 (define (pre-installer x)
   (unless (directory-exists? dynamic-extension-dir)
     (make-directory* dynamic-extension-dir))
+  (make-ffi-shared-lib wrap-fork.so wrap-fork.c)
   (make-ffi-shared-lib clang-plugin.so clang-plugin.cc)
-  (make-ffi-shared-lib clang-export.so clang-export.cc clang-plugin.so)
+  (make-ffi-shared-lib clang-export.so clang-export.cc clang-plugin.so wrap-fork.so)
   (make-native-libs))
 
 (module+ main
