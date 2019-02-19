@@ -18,8 +18,8 @@
 (define-runtime-path clang-plugin.cc
   (build-path "core" "clang-plugin.cc"))
 
-(define-runtime-path clang-export.cc
-  (build-path "core" "clang-export.cc"))
+(define-runtime-path clang-export.c
+  (build-path "core" "clang-export.c"))
 
 (define-runtime-path dynamic-extension-dir
  (build-path "compiled" "native" (system-library-subpath)))

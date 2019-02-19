@@ -19,9 +19,13 @@
 
 #include "clang-export.h"
 
+
 using namespace clang::tooling;
 using namespace clang;
 using namespace llvm;
+
+
+c_decl_array dynamic_ffi_parse(int argc, const char **argv, int deep_parse);
 
 /* begin plugin namespace */
 namespace ffi {
@@ -91,6 +95,8 @@ newFFIActionFactory(ffiAccumulator &accumulator, bool deep_parse) {
   return std::unique_ptr<FrontendActionFactory>(new ffiActionFactory(accumulator, deep_parse));
 }
 
+
 } /* end plugin namespace */
+
 
 #endif /* DYNAMIC_FFI_PLUGIN_H */

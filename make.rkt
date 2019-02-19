@@ -98,7 +98,7 @@
     (make-directory* dynamic-extension-dir))
   (make-ffi-shared-lib wrap-fork.so wrap-fork.c)
   (make-ffi-shared-lib clang-plugin.so clang-plugin.cc)
-  (make-ffi-shared-lib clang-export.so clang-export.cc clang-plugin.so wrap-fork.so)
+  (make-ffi-shared-lib clang-export.so clang-export.c clang-plugin.so wrap-fork.so)
   (make-native-libs))
 
 (module+ main

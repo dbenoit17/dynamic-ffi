@@ -1,4 +1,28 @@
+#include <string>
+#include <vector>
+#include <set>
+
+#include "clang/AST/AST.h"
+#include "clang/AST/ASTConsumer.h"
+#include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/Frontend/FrontendPluginRegistry.h"
+#include "clang/Frontend/CompilerInstance.h"
+#include "clang/Frontend/FrontendActions.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include "clang/Frontend/FrontendActions.h"
+#include "clang/Tooling/CommonOptionsParser.h"
+#include "clang/Tooling/Tooling.h"
+
 #include "clang-plugin.hh"
+#include "clang-export.h"
+
+using namespace clang::tooling;
+using namespace clang;
+using namespace llvm;
+using namespace ffi;
+
+static llvm::cl::OptionCategory MyToolCategory("my-tool options");
 
 /* https://clang.llvm.org/doxygen/classclang_1_1Type.html
    https://clang.llvm.org/doxygen/classclang_1_1TargetInfo.html */
@@ -253,5 +277,48 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
    }
   }
   return ctype;
+}
+
+c_decl_array dynamic_ffi_parse(int argc, const char **argv, int deep_parse) {
+  /* CommonOptionsParser has some external
+     static caching going on which results
+     in duplication/memory leaks of file header names.
+     We must build our own compilation database
+     and source list if we expect multiple calls
+     to dynamic_ffi_parse(...) */
+  FixedCompilationDatabase *DB =
+    new FixedCompilationDatabase(".", std::vector<std::string>());
+  std::vector<std::string> source_list;
+  for (int i = 1; i < argc; ++i) {
+    unsigned len = strlen(argv[i]);
+    SmallString<sizeof(char)> st(argv[i], argv[i] + sizeof(char) *len);
+    sys::fs::make_absolute(st);
+    source_list.push_back(st.str());
+  }
+
+  ClangTool tool(*DB, (ArrayRef<std::string>) source_list);
+
+  /* Accumulator object for gathered metadata.
+     Should not contain the source list.
+     It's just too convenient. */
+  ffiAccumulator acc(source_list);
+
+  // Run the tool
+  int ret = tool.run(newFFIActionFactory<ffiPluginAction>(acc, deep_parse).get());
+/*  if (! (ret || true)) {
+    std::cout << "Dynamic ffi encountered an error.  Clang returned exit code: " << ret
+         << "See Clang output for more details.  Exiting...\n";
+    exit(ret);
+  } */
+  printf("parse complete\n");
+
+  std::vector<c_decl> vdecls = acc.get_c_decls();
+  c_decl * declarations = (c_decl*) malloc(sizeof(c_decl) * vdecls.size());
+  std::copy(vdecls.begin(), vdecls.end(), declarations);
+
+  // Cleanup
+  delete DB;
+
+  return { vdecls.size(), declarations };
 }
 
