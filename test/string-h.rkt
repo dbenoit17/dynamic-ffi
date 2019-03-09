@@ -12,7 +12,7 @@
 
 
 ;; Builds an auto-ffi
-(define-dynamic-ffi string.h "/usr/lib64/libc-2.28" "/usr/include/string.h")
+(define-mapped-ffi string.h "/usr/lib64/libc-2.28" "/usr/include/string.h")
 
 ;; Call strcat from built ffi
 (define strcat-result (string.h-fncall 'strcat string1 string2))

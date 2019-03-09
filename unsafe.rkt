@@ -104,7 +104,7 @@
   (make-hash
     (filter (λ (x) (cdr x)) pairs)))
 
-(define-syntax (define-dynamic-ffi stx)
+(define-syntax (define-mapped-ffi stx)
   (syntax-case stx ()
     [(_ id lib header ...)
      (with-syntax
@@ -117,3 +117,15 @@
                    (λ (elem . params)
                      (apply (hash-ref obj-map elem) params )))))]))
 
+(define-syntax (define-dynamic-ffi stx)
+  (syntax-case stx ()
+    [(_ id lib header ...)
+     (with-syntax
+       ([prefix  (format-id #'id "~a" (syntax->datum #'id))])
+     #'(let ([ns (current-namespace)]
+           [ffi-obj-map (build-ffi-obj-map lib header ...)])
+       (printf "~a\n" ffi-obj-map)
+       (for ([kv (hash->list ffi-obj-map)])
+         (namespace-set-variable-value!
+           (string->symbol (format "~a-~a" 'prefix (car kv)))
+          (cdr kv)))))]))

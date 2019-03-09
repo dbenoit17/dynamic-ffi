@@ -11,7 +11,7 @@
 (define string2 "world\n")
 
 ;; Builds an auto-ffi
-(define-dynamic-ffi libc
+(define-mapped-ffi libc
   "/usr/lib64/libc-2.28"
   "/usr/include/string.h"
   "/usr/include/stdio.h"
