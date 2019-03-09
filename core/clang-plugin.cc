@@ -67,7 +67,7 @@ bool ffi::ffiASTConsumer::HandleTopLevelDecl(DeclGroupRef decls) {
         //accumulator.push_decl(d);
       }
       else {
-        printf("\ndynamic-ffi: unimplemented decl at: \n");
+        fprintf(stderr, "\ndynamic-ffi: unimplemented decl at: \n");
         (*i)->dump();
 
       }
@@ -110,7 +110,7 @@ c_decl ffi::ffiASTConsumer::make_decl_from_function(const Decl *dec) {
    char *type_str = (char*) malloc(sizeof(char*) * (strlen(st)+ 1));
    strcpy(name, cxx_name.c_str());
    strcpy(type_str, st);
-   __debug(printf("%s\n", name);)
+   __debug(fprintf(stderr, "%s\n", name);)
 
    c_type ctype = dispatch_on_type(d->getType(), dec);
 
@@ -181,7 +181,7 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
       ctype = make_union_type(fields, field_length, 0, 0, width);
     }
     else {
-      printf("record type error");
+      fprintf(stderr, "record type error");
       exit(0);
     }
   }
@@ -198,7 +198,7 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
        ctype = make_unsigned_int_c_type(width, is_const, is_volatile);
      }
      else {
-       printf("int type error");
+       fprintf(stderr, "int type error");
        exit(0);
      }
    }
@@ -271,7 +271,7 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
     ctype = make_function_type(fields, field_length);
    }
    else {
-     printf("\ndynamic-ffi: unimplemented type: %s: %s at:\n", type->getTypeClassName(), qual_type.getAsString().c_str());
+     fprintf(stderr, "\ndynamic-ffi: unimplemented type: %s: %s at:\n", type->getTypeClassName(), qual_type.getAsString().c_str());
      d->dump();
      ctype = make_unknown_c_type(width, is_const, is_volatile);
    }
@@ -310,7 +310,7 @@ c_decl_array dynamic_ffi_parse(int argc, const char **argv, int deep_parse) {
          << "See Clang output for more details.  Exiting...\n";
     exit(ret);
   } */
-  printf("parse complete\n");
+  fprintf(stderr, "parse complete\n");
 
   std::vector<c_decl> vdecls = acc.get_c_decls();
   c_decl * declarations = (c_decl*) malloc(sizeof(c_decl) * vdecls.size());
