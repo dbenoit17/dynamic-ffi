@@ -4,9 +4,21 @@
 
 (provide (all-defined-out))
 
+(define ~a-library "~a")
+
+(define ~a-headers ~a)
+
 (define (warn-undefined-symbol sym)
   (lambda ()
     (fprintf (current-error-port)
       "warning: ~a does not contain symbol ~~a" sym)))
 
-~a 
+(define ~a 
+ ~a)
+
+(define (~a-ref elem)
+  (hash-ref ~a elem))
+
+(define (~a-fncall elem . params)
+  (apply (hash-ref ~a elem params)))
+  

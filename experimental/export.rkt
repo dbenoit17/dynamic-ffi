@@ -4,8 +4,6 @@
   ffi/unsafe
   racket/string
   racket/port
-  (for-syntax racket/base
-              racket/syntax)
   "../runtime-paths.rkt"
   (prefix-in dffi: "../meta.rkt"))
 
@@ -17,6 +15,12 @@
     (string-join
       (for/list ([e l])
         (format "~a" e)))))
+
+(define (format-string-list l)
+  (format "(list ~a)"
+    (string-join
+      (for/list ([e l])
+        (format "\"~a\"" e)))))
 
 (define (format-ffi-int ct-int)
   (define width (dffi:ctype-width ct-int))
@@ -44,7 +48,7 @@
               (eq? (dffi:ctype-width pointee) 8))
          '_string]
         ;; all pointers opaque for now to
-        ;; prevent type conflicts 
+        ;; prevent type conflicts
         [else '_pointer]))
         ;; would be cool to do it this way
         ;;[else (_cpointer (format-dffi-obj pointee))]))
@@ -96,11 +100,10 @@
    (error "void only allowed as pointer or function return")]
   [else (error "unimplemented type")]))
 
-(define (format-ffi-obj-map lib . headers)
+(define (format-ffi-obj-map ffi-data lib . headers)
   (unless (for/or ([ext '(".so" ".dylib" ".dll")])
             (file-exists? (string-append lib ext)))
-    (error "file does not exist: " (string-append lib ".so")))
-  (define ffi-data (apply dffi:dynamic-ffi-parse headers))
+    (error "format-ffi: file does not exist: " (string-append lib ".so")))
   (define pairs
     (for/list ([decl ffi-data])
       (define name (dffi:declaration-name decl))
@@ -112,7 +115,17 @@
       (cons (string->symbol name) ffi-obj)))
   (make-hash pairs))
 
-(define (export-mapped-ffi ffi-name ffi-map file)
+(define (create-mapped-static-ffi ffi-data file ffi-name lib-path . headers)
+  (define ffi-map
+    (apply format-ffi-obj-map (cons ffi-data (cons lib-path headers))))
+  (export-mapped-ffi file ffi-name lib-path headers ffi-map))
+
+(define (create-static-ffi ffi-data file ffi-name lib-path . headers)
+  (define ffi-map
+    (apply format-ffi-obj-map (cons ffi-data (cons lib-path headers))))
+  (export-ffi file ffi-name lib-path headers ffi-map))
+
+(define (export-mapped-ffi file ffi-name lib-path headers ffi-map)
   (define template-port (open-input-file mapped-ffi-template-path))
   (define template (port->string template-port))
   (define formatted-pairs
@@ -122,17 +135,21 @@
          (format "\n   (cons '~a\n    ~a)" (car pr) (cdr pr))))))
   (close-input-port template-port)
   (with-output-to-file file #:exists 'replace
-   (λ () (printf template 
-           ffi-name ffi-name formatted-pairs ffi-name ffi-name ffi-name ffi-name))))
+   (λ () (printf template
+           ffi-name lib-path ffi-name (format-string-list headers)
+           ffi-name ffi-name formatted-pairs ffi-name ffi-name
+           ffi-name ffi-name))))
 
-(define (export-defined-ffi ffi-name ffi-map file)
+(define (export-ffi file ffi-name lib-path headers ffi-map)
   (define template-port (open-input-file defined-ffi-template-path))
   (define template (port->string template-port))
   (define formatted-definitions
      (string-join
        (for/list ([pr (filter (λ (x) (cdr x)) (hash->list ffi-map))])
-         (format "(define ~a-~a\n  ~a)\n\n" ffi-name (car pr) (cdr pr))) 
+         (format "(define ~a-~a\n  ~a)\n\n" ffi-name (car pr) (cdr pr)))
        ""))
   (close-input-port template-port)
   (with-output-to-file file #:exists 'replace
-   (λ () (printf template ffi-name formatted-definitions))))
+   (λ () (printf template
+           ffi-name lib-path ffi-name (format-string-list headers)
+           ffi-name formatted-definitions))))
