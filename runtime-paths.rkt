@@ -54,3 +54,8 @@
 (define-runtime-path dynamic-ffi-tests
   (build-path "test"))
 
+(define-runtime-path mapped-ffi-template-path
+  (build-path "experimental" "template-files" "mapped-ffi.template.rkt"))
+(define-runtime-path defined-ffi-template-path
+  (build-path "experimental" "template-files" "defined-ffi.template.rkt"))
+
