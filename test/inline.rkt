@@ -14,5 +14,19 @@
   }
 }
 
-(time (mylib 'add 2 3))
+@define-inline-ffi[oh-my-racket!]{
+  int add(int x, int y) {
+    __asm__("addl %%ebx, %%eax;"
+            :"=r"(y)
+            :"a"(x),"b"(y));
+    return y;
+  }
+}
+
+(define a (mylib 'add 2 3))
+(define b (oh-my-racket! 'add 2 3))
+
+(printf "\nreturn from mylib: ~a\n" a)
+(printf "return from oh-my-racket!: ~a\n" b)
+(printf "equal? ~a\n" (eq? a b))
 

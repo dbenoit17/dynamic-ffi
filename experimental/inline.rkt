@@ -33,7 +33,6 @@
       (if found-compiler found-compiler
         (find-first-compiler (cdr compilers))))))
 
-
 (define (cache-compile-inline-c c-code
                                 #:key [key 'ffiobj]
                                 #:compiler [c 'auto]
@@ -47,7 +46,6 @@
     (error "could not find compiler on path"))
   (define object-file (get-cached-c-obj-path c-code key))
   (define cmd (format "~a ~a -o ~a ~a" compiler source object-file flags))
-  (display cmd) (newline)
   (system cmd))
 
 (define-syntax-rule (inline key code ...)
