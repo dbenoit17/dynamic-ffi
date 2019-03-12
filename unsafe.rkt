@@ -120,11 +120,13 @@
 (define-syntax (define-dynamic-ffi stx)
   (syntax-case stx ()
     [(_ id lib header ...)
-     (with-syntax
-       ([prefix  (format-id #'id "~a" (syntax->datum #'id))])
-     #'(let ([ns (current-namespace)]
-           [ffi-obj-map (build-ffi-obj-map lib header ...)])
-       (for ([kv (hash->list ffi-obj-map)])
-         (namespace-set-variable-value!
-           (string->symbol (format "~a-~a" 'prefix (car kv)))
-          (cdr kv)))))]))
+     #'(define id
+        (let ([ffi-obj-map (build-ffi-obj-map lib header ...)])
+         (case-lambda
+           [() ffi-obj-map]
+           [(sym)
+            (let ([obj (hash-ref ffi-obj-map sym)])
+              (if (procedure? obj) (obj) obj))]
+           [(sym . args)
+            (let ([obj (hash-ref ffi-obj-map sym)])
+              (apply obj args))])))]))
