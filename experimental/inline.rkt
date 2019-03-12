@@ -46,7 +46,8 @@
     (error "could not find compiler on path"))
   (define object-file (get-cached-c-obj-path c-code key))
   (define cmd (format "~a ~a -o ~a ~a" compiler source object-file flags))
-  (system cmd))
+  (system cmd)
+  (void))
 
 (define-syntax-rule (inline key code ...)
   (list key (string-append code ...)))
@@ -69,7 +70,7 @@
            (cache-inline-c source-code 'key))
          (unless (and (file-exists? source-file)
                       (file-exists? object-file)
-                      (timestamp<? source-file object-file))
+                   (timestamp<=? source-file object-file))
            (cache-compile-inline-c source-code #:key 'key #:compiler (compiler) #:compile-flags (compile-flags)))
          (define-dynamic-ffi/cached name (format "~a" source-file) source-file)))]))
 

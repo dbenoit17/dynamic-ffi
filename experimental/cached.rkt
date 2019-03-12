@@ -16,7 +16,7 @@
 
 (provide (all-defined-out))
 
-(define __debug #t)
+(define __debug #f)
 
 (define (debug-file-exists? file)
   (define result (file-exists? file))
@@ -48,6 +48,7 @@
   (define result
     (equal? (sort (map ~a headers) string<?)
             (sort (map ~a cached-headers) string<?)))
+  (debug-msg (format "header-equal? ~a\n" result))
   result)
 
 (define (lib-equal? ffi-name cached-file-path lib)
@@ -56,20 +57,21 @@
       (string->symbol (format "~a-library" ffi-name))
       (λ () #f)))
   (define result (equal? lib cached-lib))
+  (debug-msg (format "lib-equal? ~a\n" result))
   result)
 
 ; also defined in make.rkt
-(define (timestamp<? i o)
-  (< (file-or-directory-modify-seconds i)
-     (file-or-directory-modify-seconds o)))
+(define (timestamp<=? i o)
+  (<= (file-or-directory-modify-seconds i)
+      (file-or-directory-modify-seconds o)))
 
 (define (timestamps-valid? ffi-name cached-file-path lib headers)
   (define suffix (system-type 'so-suffix))
   (for/and ([file (cons (format "~a~a" lib suffix) headers)])
-    (timestamp<? file cached-file-path)))
+    (timestamp<=? file cached-file-path)))
 
 (define (cache-valid? ffi-name cached-file-path lib . headers)
-  (and (file-exists? cached-file-path)
+  (and (debug-file-exists? cached-file-path)
     (and (lib-equal? ffi-name cached-file-path lib)
        (and (headers-equal? ffi-name cached-file-path headers))
          (timestamps-valid? ffi-name cached-file-path lib headers))))
