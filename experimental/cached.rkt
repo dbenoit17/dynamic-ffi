@@ -2,7 +2,11 @@
 
 (require
   racket/set
+  racket/string
+  racket/format
   compiler/compiler
+  openssl/sha1
+
   (for-syntax racket/base
               racket/syntax)
   "../runtime-paths.rkt"
@@ -12,47 +16,67 @@
 
 (provide (all-defined-out))
 
-(define (get-cached-ffi-path ffi-name)
+(define __debug #t)
+
+(define (debug-file-exists? file)
+  (define result (file-exists? file))
+  (debug-msg (format "file-exists? ~a ~a\n" file result))
+  result)
+
+(define (debug-msg msg)
+  (when __debug (fprintf (current-error-port) "~a" msg)))
+
+(define (string-ish-join l)
+  (string-join
+    (for/list ([e l])
+      (format "~a" e))))
+
+(define (get-cached-ffi-path ffi-name lib . headers)
+  (define ffi-full-string
+      (format "~a ~a ~a" ffi-name lib (string-ish-join (sort headers string<?))))
+  (define ffi-digest
+    (sha1 (open-input-string ffi-full-string)))
   (unless (directory-exists? ffi-cache-path)
     (make-directory ffi-cache-path))
-  (build-path ffi-cache-path (format "~a.ffi.rkt" ffi-name)))
+  (build-path ffi-cache-path (format "~a.~a.ffi.rkt" ffi-name ffi-digest)))
 
-(define (headers-equal? ffi-name headers)
+(define (headers-equal? ffi-name cached-file-path headers)
   (define cached-headers
-    (dynamic-require (get-cached-ffi-path ffi-name)
+    (dynamic-require cached-file-path
       (string->symbol (format "~a-headers" ffi-name))
-      (λ () #f)))
-  (and (= (length headers) (length cached-headers))
-    (for/and ([header headers])
-     (member header cached-headers))
-    #t))
+      (λ () '())))
+  (define result
+    (equal? (sort (map ~a headers) string<?)
+            (sort (map ~a cached-headers) string<?)))
+  result)
 
-(define (lib-equal? ffi-name lib)
+(define (lib-equal? ffi-name cached-file-path lib)
   (define cached-lib
-    (dynamic-require (get-cached-ffi-path ffi-name)
+    (dynamic-require cached-file-path
       (string->symbol (format "~a-library" ffi-name))
       (λ () #f)))
-  (equal? lib cached-lib))
+  (define result (equal? lib cached-lib))
+  result)
 
 ; also defined in make.rkt
 (define (timestamp<? i o)
   (< (file-or-directory-modify-seconds i)
      (file-or-directory-modify-seconds o)))
 
-(define (timestamps-valid? ffi-name lib headers)
+(define (timestamps-valid? ffi-name cached-file-path lib headers)
   (define suffix (system-type 'so-suffix))
   (for/and ([file (cons (format "~a~a" lib suffix) headers)])
-    (timestamp<? file (get-cached-ffi-path ffi-name))))
+    (timestamp<? file cached-file-path)))
 
-(define (cache-valid? ffi-name lib . headers)
-  (and (file-exists? (get-cached-ffi-path ffi-name))
-    (and (lib-equal? ffi-name lib)
-       (and (headers-equal? ffi-name headers))
-         (timestamps-valid? ffi-name lib headers))))
+(define (cache-valid? ffi-name cached-file-path lib . headers)
+  (and (file-exists? cached-file-path)
+    (and (lib-equal? ffi-name cached-file-path lib)
+       (and (headers-equal? ffi-name cached-file-path headers))
+         (timestamps-valid? ffi-name cached-file-path lib headers))))
 
-(define (cache-ffi! ffi-data ffi-name lib . headers)
+(define (cache-ffi! ffi-data ffi-name cached-file-path lib . headers)
   (apply create-mapped-static-ffi ffi-data
-    (get-cached-ffi-path ffi-name) ffi-name lib headers))
+    cached-file-path ffi-name lib headers))
 
 (define (build-ffi-obj-map2 ffi-data lib . headers)
   (unless (for/or ([ext '(".so" ".dylib" ".dll")])
@@ -74,19 +98,23 @@
 (define-syntax (define-dynamic-ffi/cached stx)
   (syntax-case stx ()
     [(_ id lib header ...)
-     #'(let ([ns (current-namespace)]
-             [mapped-symbols (list->set (namespace-mapped-symbols))])
-           (let ([ffi-obj-map
-                  (cond [(cache-valid? 'id lib header ...)
-                         (dynamic-require (get-cached-ffi-path 'id) 'id)]
-                    [else
-                      (let ([ffi-data (dffi:dynamic-ffi-parse header ...)])
-                        (cache-ffi! ffi-data 'id lib header ...)
-                        ((compile-zos #t)
-                           (list (get-cached-ffi-path 'id)) 'auto)
-                        (build-ffi-obj-map2 ffi-data lib header ...))])])
-             (for ([kv (hash->list ffi-obj-map)])
-               (define new-id (string->symbol (format "~a-~a" 'id (car kv))))
-               (when (set-member? mapped-symbols new-id)
-                 (error (format "error: define-dynamic-ffi/cached: symbol '~a already exists in current namespace" new-id)))
-               (namespace-set-variable-value! new-id (cdr kv) #t ns #t))))]))
+     #'(define id
+        (let* ([cached-file-path (get-cached-ffi-path 'id lib header ...)]
+               [ffi-obj-map
+           (cond [(cache-valid? 'id cached-file-path lib header ...)
+                  (dynamic-require cached-file-path 'id)]
+             [else
+               (let ([ffi-data (dffi:dynamic-ffi-parse header ...)])
+                 (cache-ffi! ffi-data 'id cached-file-path lib header ...)
+                 ((compile-zos #t)
+                    (list cached-file-path) 'auto)
+                 (build-ffi-obj-map2 ffi-data lib header ...))])])
+           (case-lambda
+             [() ffi-obj-map]
+             [(sym)
+              (let ([obj (hash-ref ffi-obj-map sym)])
+                (if (procedure? obj) (obj) obj))]
+             [(sym . args)
+              (let ([obj (hash-ref ffi-obj-map sym)])
+                (apply obj args))])))]))
+
