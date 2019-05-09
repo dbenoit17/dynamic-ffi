@@ -1,9 +1,8 @@
 #lang at-exp racket/base
 
 (require rackunit
-         rackunit/text-ui)
-
-(require "../unsafe.rkt")
+         rackunit/text-ui
+         dynamic-ffi/unsafe)
 
 @define-inline-ffi[mylib]{
   #include <stdio.h>

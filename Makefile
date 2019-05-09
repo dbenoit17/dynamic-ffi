@@ -8,3 +8,6 @@ reinstall:
 
 clean:
 	rm -rf compiled/native
+
+clean-cache:
+	rm -rf compiled/ffi-cache

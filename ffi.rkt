@@ -1,8 +1,10 @@
 #lang racket/base
 
 (require
-  ffi/unsafe
+  (rename-in
+    ffi/unsafe [-> ffi->])
   racket/system
+  racket/contract
   (for-syntax racket/base
               racket/syntax
               syntax/parse)
@@ -10,7 +12,12 @@
 
 (provide
   define-dynamic-ffi
-  build-ffi-obj-map)
+  build-ffi-obj-map
+  (contract-out
+    [dynamic-ffi-lib
+     (-> (or/c string? path?) string? ... 
+         (cons/c (or/c string? path?) 
+                 (listof string?)))]))
 
 (define (make-ffi-int ct-int)
   (define width (dffi:ctype-width ct-int))
@@ -89,10 +96,16 @@
    (error "void only allowed as pointer or function return")]
   [else (error "unimplemented type")]))
 
+(define (dynamic-ffi-lib lib . versions)
+  (cons lib versions))
+
 (define (build-ffi-obj-map ffi-data lib . headers)
-  (unless (for/or ([ext '(".so" ".dylib" ".dll")])
-            (file-exists? (string-append lib ext)))
-    (error "file does not exist: " (string-append lib ".so")))
+  (define ffi-library 
+    (cond [(ffi-lib? lib) lib]
+          [(or (string? lib) (path? lib))
+           (ffi-lib lib)]
+          [(pair? lib)
+           (ffi-lib (car lib) (cdr lib))]))
   (define pairs
     (for/list ([decl ffi-data])
       (define name (dffi:declaration-name decl))
@@ -100,7 +113,7 @@
       (define ffi-obj
         (if (dffi:enum-decl? decl)
           (dffi:declaration-literal-value decl)
-          (get-ffi-obj name lib (make-dffi-obj type)
+          (get-ffi-obj name ffi-library (make-dffi-obj type)
             (λ () (printf "warning: ~a does not contain declared symbol ~a\n" lib name) #f))))
       (cons (string->symbol name) ffi-obj)))
   (make-hash
@@ -109,7 +122,9 @@
 (define-syntax (define-dynamic-ffi stx)
   (syntax-parse stx
     [(_ id:id lib header ...)
-     #:declare lib (expr/c #'(or/c string? path?))
+     #:declare lib (expr/c #'(or/c string? path? ffi-lib? 
+                               (cons/c (or/c string? path?)
+                               (listof string?))))
      #:declare header (expr/c #'(or/c string? path?))
        #'(define id
            (let* ([ffi-data (dffi:dynamic-ffi-parse header ...)]

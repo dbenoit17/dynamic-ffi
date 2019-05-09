@@ -1,47 +1,28 @@
 #lang racket/base
 
-(require
-  racket/list
-  "../unsafe.rkt")
+(require rackunit
+         rackunit/text-ui
+         dynamic-ffi/unsafe)
 
-(provide (all-defined-out))
-
-
-(define string1 "hello ")
-(define string2 "world\n")
-
-;; Builds an auto-ffi
 (define-dynamic-ffi libc
-  "/usr/lib64/libc-2.29"
-  "/usr/include/string.h"
-  "/usr/include/stdio.h"
-  "/usr/include/stdio_ext.h")
+  (dynamic-ffi-lib "libc" "6")
+  "/usr/include/string.h")
 
-(define (libc-strcat x y)
-  (libc 'strcat x y))
+(define-dynamic-ffi/cached libc/cached
+  (dynamic-ffi-lib "libc" "6")
+  "/usr/include/string.h")
 
 
-(define (libc-printf s)
-  ;; Does not work with varargs
-  (libc 'printf s)
-  (void))
+(define tests
+  (test-suite
+    "test libc"
+    (test-case
+      "check strlen"
+      (let ([str (list->bytes (build-list (random 10000) (λ (x) (random 32 125))))])
+        (check-equal? (libc 'strlen str) (bytes-length str))))
+    (test-case
+      "check strlen cached"
+      (let ([str (list->bytes (build-list (random 10000) (λ (x) (random 32 125))))])
+        (check-equal? (libc/cached 'strlen str) (bytes-length str))))))
 
-;; This should be a buffer overflow
-(define x (libc-strcat string1 string2))
-
-(libc-printf "string1: ")
-(libc-printf string1)
-(libc-printf "\nstring2: ")
-(libc-printf string2)
-(libc-printf "\nconcat: ")
-(libc-printf x)
-(libc-printf "\n")
-
-(define (enum-ref-print enum)
-  (printf "  ~a: ~a\n" enum (libc enum)))
-
-(printf "\n enums constants: \n")
-(enum-ref-print 'FSETLOCKING_BYCALLER)
-(enum-ref-print  'FSETLOCKING_INTERNAL)
-(enum-ref-print  'FSETLOCKING_QUERY)
-
+(run-tests tests)

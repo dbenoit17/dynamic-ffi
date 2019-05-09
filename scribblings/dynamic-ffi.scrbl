@@ -32,6 +32,8 @@
 
 @section{Defining FFIs}
 
+
+ 
 @defform[(define-dynamic-ffi id lib header ...) 
          #:contracts ([id identifier?] 
                       [lib (or/c string? path?)]
@@ -45,15 +47,17 @@ is called with no arguments, a hash-map of all symbols and ffi objects in the li
 (require dynamic-ffi/unsafe)
 
 (define-dynamic-ffi libc
-  "/usr/lib64/libc-2.29"
+  (dynamic-ffi-lib "libc" "6")
   "/usr/include/stdio.h")
 
 (libc 'printf "hello world")]
 
-
-Note: libc may have a different version number on your system, so you may 
-need to update this example path accordingly.  In the future, support is
-planned for parity with how ffi-obj handles libraries.
+@defproc[(dynamic-ffi-lib [lib (or/c string? path?)]
+                          [version string?] ...)
+                          (cons/c (or/c string? path?)
+                                  (listof string?))]
+Takes a library base name and shared object versions, and produces
+a list argument which can be used in place of a hard-coded system object file path.
 
 @defform[(define-dynamic-ffi/cached id lib header ...) 
          #:contracts ([id identifier?] 

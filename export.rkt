@@ -13,15 +13,15 @@
   create-static-ffi
   (contract-out          
     [generate-static-ffi
-     (-> string? 
+     (-> (or/c string? symbol?)
          (or/c string? path?) 
-         (or/c string? path?) 
+         (or/c string? path? (listof string?)) 
          (or/c string? path?)  ... 
          any)]
     [generate-mapped-static-ffi
-     (-> string? 
-         (or/c string? path?) 
-         (or/c string? path?) 
+     (-> (or/c string? symbol?)
+         (or/c string? path?)
+         (or/c string? path? (listof string?)) 
          (or/c string? path?)  ... 
          any)]))
 
@@ -121,9 +121,6 @@
   [else (error "unimplemented type")]))
 
 (define (format-ffi-obj-map ffi-data lib . headers)
-  (unless (for/or ([ext '(".so" ".dylib" ".dll")])
-            (file-exists? (string-append lib ext)))
-    (error "format-ffi: file does not exist: " (string-append lib ".so")))
   (define pairs
     (for/list ([decl ffi-data])
       (define name (dffi:declaration-name decl))
@@ -131,7 +128,7 @@
       (define ffi-obj
         (if (dffi:enum-decl? decl)
           (format "~a" (dffi:declaration-literal-value decl))
-          (format "(get-ffi-obj '~a \"~a\"\n    ~a \n    (warn-undefined-symbol '~a))" 
+          (format "(get-ffi-obj '~a ~a\n    ~a \n    (warn-undefined-symbol '~a))" 
             name lib (format-dffi-obj type) name)))
       (cons (string->symbol name) ffi-obj)))
   (make-hash pairs))
@@ -143,7 +140,7 @@
 ;; The export ffi functions are the core exporting functions
 ;; They take a formatted ffi map produced by format-ffi-obj-map
 ;; and export an ffi to an output file
-(define (export-mapped-ffi file ffi-name lib-path headers ffi-map)
+(define (export-mapped-ffi file ffi-name library-name lib headers ffi-map)
   (define template-port (open-input-file mapped-ffi-template-path))
   (define template (port->string template-port))
   (define formatted-pairs
@@ -154,11 +151,10 @@
   (close-input-port template-port)
   (with-output-to-file file #:exists 'replace
    (λ () (printf template
-           ffi-name lib-path ffi-name (format-string-list headers)
-           ffi-name ffi-name formatted-pairs ffi-name ffi-name
-           ffi-name ffi-name))))
+           library-name lib ffi-name (format-string-list headers)
+           ffi-name formatted-pairs ffi-name))))
 
-(define (export-ffi file ffi-name lib-path headers ffi-map)
+(define (export-ffi file ffi-name library-name lib headers ffi-map)
   (define template-port (open-input-file defined-ffi-template-path))
   (define template (port->string template-port))
   (define formatted-definitions
@@ -169,7 +165,7 @@
   (close-input-port template-port)
   (with-output-to-file file #:exists 'replace
    (λ () (printf template
-           ffi-name lib-path ffi-name (format-string-list headers)
+           library-name lib ffi-name (format-string-list headers)
            ffi-name formatted-definitions))))
 
 ;; The create ffi functions take unformatted ffi metadata produced by
@@ -177,15 +173,22 @@
 ;; ffi functions.  These are useful when ffi-data is generated earlier
 ;; in a routine and used by other functions than just export.
 ;; define-dynamic-ffi/cached in cached.rkt is an example of this.
-(define (create-mapped-static-ffi ffi-data file ffi-name lib-path . headers)
+(define (create-static-ffi-generic dispatch ffi-data file ffi-name lib headers)
+  (define library-name (format "~a-ffi-lib" ffi-name))
+  (define ffi-library 
+    (cond [(or (string? lib) (path? lib))
+           (format "(ffi-lib \"~a\")" lib)]
+          [(pair? lib)
+           (format "(ffi-lib \"~a\" ~a)" (car lib)  (format-string-list (cdr lib)))]))
   (define ffi-map
-    (apply format-ffi-obj-map (cons ffi-data (cons lib-path headers))))
-  (export-mapped-ffi file ffi-name lib-path headers ffi-map))
+    (apply format-ffi-obj-map (cons ffi-data (cons library-name headers))))
+  (dispatch file ffi-name library-name ffi-library headers ffi-map))
 
-(define (create-static-ffi ffi-data file ffi-name lib-path . headers)
-  (define ffi-map
-    (apply format-ffi-obj-map (cons ffi-data (cons lib-path headers))))
-  (export-ffi file ffi-name lib-path headers ffi-map))
+(define (create-mapped-static-ffi ffi-data file ffi-name lib . headers)
+  (create-static-ffi-generic export-mapped-ffi ffi-data file ffi-name lib headers))
+
+(define (create-static-ffi ffi-data file ffi-name lib . headers)
+  (create-static-ffi-generic export-ffi ffi-data file ffi-name lib  headers))
 
 ;; The generate ffi functions are the only user-facing export functions
 ;; provided by dynamic-ffi/unsafe.  These functions take only the
@@ -193,10 +196,10 @@
 ;; dffi:dynamic-ffi-parse themselves to export a static ffi.
 (define (generate-mapped-static-ffi ffi-name file lib-path . headers)
   (define ffi-data (apply dffi:dynamic-ffi-parse headers))
-  (apply generate-mapped-static-ffi (append (list ffi-data file ffi-name lib-path) headers)))
+  (apply create-mapped-static-ffi (append (list ffi-data file ffi-name lib-path) headers)))
 
 (define (generate-static-ffi ffi-name file lib-path . headers)
   (define ffi-data (apply dffi:dynamic-ffi-parse headers ))
-  (apply generate-mapped-static-ffi (append (list ffi-data file ffi-name lib-path) headers)))
+  (apply create-static-ffi (append (list ffi-data file ffi-name lib-path) headers)))
   
 

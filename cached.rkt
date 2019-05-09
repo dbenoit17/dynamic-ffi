@@ -40,6 +40,9 @@
     (for/list ([e l])
       (format "~a" e))))
 
+(define (escape-for-path str)
+  (string-replace str "/" "_"))
+                  
 (define (get-cached-ffi-path ffi-name lib . headers)
   (define ffi-full-string
       (format "~a ~a ~a" ffi-name lib (string-ish-join (sort headers string<?))))
@@ -47,7 +50,8 @@
     (sha1 (open-input-string ffi-full-string)))
   (unless (directory-exists? ffi-cache-path)
     (make-directory ffi-cache-path))
-  (build-path ffi-cache-path (format "~a.~a.ffi.rkt" ffi-name ffi-digest)))
+  (build-path ffi-cache-path 
+    (format "~a.~a.ffi.rkt" (escape-for-path (format "~a" ffi-name)) ffi-digest)))
 
 (define (headers-equal? ffi-name cached-file-path headers)
   (define cached-headers
@@ -89,16 +93,19 @@
   (apply create-mapped-static-ffi ffi-data
     cached-file-path ffi-name lib headers))
 
+
 (define-syntax (define-dynamic-ffi/cached stx)
   (syntax-parse stx
     [(_ id:id lib header ...)
-     #:declare lib (expr/c #'(or/c string? path?))
+     #:declare lib (expr/c #'(or/c string? path? 
+                               (cons/c (or/c string? path?)
+                                       (listof string?))))
      #:declare header (expr/c #'(or/c string? path?))
      #'(define id
         (let* ([cached-file-path (get-cached-ffi-path 'id lib.c header ...)]
                [ffi-obj-map
            (cond [(cache-valid? 'id cached-file-path lib.c header.c ...)
-                  (dynamic-require cached-file-path 'id)]
+                  ((dynamic-require cached-file-path 'id))]
              [else
                (let ([ffi-data (dffi:dynamic-ffi-parse header ...)])
                  (cache-ffi! ffi-data 'id cached-file-path lib.c header.c ...)

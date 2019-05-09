@@ -1,0 +1,2 @@
+these are tests which demonstrate shortcomings in dynamic-ffi.
+the goal is to use these tests as references to improve the library.

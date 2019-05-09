@@ -10,6 +10,7 @@
  define-dynamic-ffi
  define-dynamic-ffi/cached
  define-inline-ffi
+ dynamic-ffi-lib
  generate-mapped-static-ffi 
  generate-static-ffi)
 

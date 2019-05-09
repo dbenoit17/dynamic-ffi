@@ -2,9 +2,11 @@
 
 (require ffi/unsafe)
 
-(provide (all-defined-out))
+(provide (except-out
+           (all-defined-out)
+           ffi-obj-map))
 
-(define ~a-library "~a")
+(define ~a ~a)
 
 (define ~a-headers ~a)
 
@@ -13,12 +15,16 @@
     (fprintf (current-error-port)
       "warning: ~a does not contain symbol ~~a" sym)))
 
-(define ~a 
+(define ffi-obj-map
  ~a)
 
-(define (~a-ref elem)
-  (hash-ref ~a elem))
+(define ~a 
+  (case-lambda
+    [() ffi-obj-map]
+    [(sym)
+     (let ([obj (hash-ref ffi-obj-map sym)])
+       (if (procedure? obj) (obj) obj))]
+    [(sym . args)
+     (let ([obj (hash-ref ffi-obj-map sym)])
+       (apply obj args))]))
 
-(define (~a-fncall elem . params)
-  (apply (hash-ref ~a elem params)))
-  
