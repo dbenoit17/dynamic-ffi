@@ -26,17 +26,14 @@
   (libc 'printf s)
   (void))
 
-;; Doesn't seem to be overwriting memory?
-(define c (list->string (build-list 30 (lambda (x) #\c))))
 
-(define x (libc-strcat string1 c))
+;; This should be a buffer overflow
+(define x (libc-strcat string1 string2))
 
 (libc-printf "string1: ")
 (libc-printf string1)
 (libc-printf "\nstring2: ")
 (libc-printf string2)
-(libc-printf "\nc: ")
-(libc-printf c)
 (libc-printf "\nconcat: ")
 (libc-printf x)
 (libc-printf "\n")

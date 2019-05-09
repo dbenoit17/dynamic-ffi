@@ -1,8 +1,5 @@
 #lang racket/base
 
-(module+ test
-  (require rackunit))
-
 ;; Notice
 ;; To install (from within the package directory):
 ;;   $ raco pkg install
@@ -28,6 +25,7 @@
 
 (module+ test
   ;; Tests to be run with raco test
+  (require "test/inline.rkt")
   )
 
 (module+ main

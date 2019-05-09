@@ -2,8 +2,7 @@
 
 (require
   ffi/unsafe
-  ;; -> conflicts between ffi and contract
-  (rename-in racket/contract [-> =>])
+  racket/system
   (for-syntax racket/base
               racket/syntax
               syntax/parse)
