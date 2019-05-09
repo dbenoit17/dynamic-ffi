@@ -1,14 +1,34 @@
 #lang racket/base
 
 (require
-  ffi/unsafe
   racket/string
   racket/port
-  "../runtime-paths.rkt"
-  (prefix-in dffi: "../meta.rkt"))
+  racket/runtime-path
+  racket/contract
+  (for-syntax racket/base)
+  (prefix-in dffi: "meta.rkt"))
 
-(provide (all-defined-out)
-         (all-from-out ffi/unsafe))
+(provide 
+  create-mapped-static-ffi
+  create-static-ffi
+  (contract-out          
+    [generate-static-ffi
+     (-> string? 
+         (or/c string? path?) 
+         (or/c string? path?) 
+         (or/c string? path?)  ... 
+         any)]
+    [generate-mapped-static-ffi
+     (-> string? 
+         (or/c string? path?) 
+         (or/c string? path?) 
+         (or/c string? path?)  ... 
+         any)]))
+
+(define-runtime-path mapped-ffi-template-path
+  (build-path "experimental" "template-files" "mapped-ffi-template"))
+(define-runtime-path defined-ffi-template-path
+  (build-path "experimental" "template-files" "defined-ffi-template"))
 
 (define (format-list l)
   (format "(list ~a)"
@@ -21,7 +41,6 @@
     (string-join
       (for/list ([e l])
         (format "\"~a\"" e)))))
-
 
 (define (format-ffi-int ct-int)
   (define width (dffi:ctype-width ct-int))
@@ -112,20 +131,18 @@
       (define ffi-obj
         (if (dffi:enum-decl? decl)
           (format "~a" (dffi:declaration-literal-value decl))
-          (format "(get-ffi-obj '~a \"~a\"\n    ~a \n    (warn-undefined-symbol '~a))" name lib (format-dffi-obj type) name)))
+          (format "(get-ffi-obj '~a \"~a\"\n    ~a \n    (warn-undefined-symbol '~a))" 
+            name lib (format-dffi-obj type) name)))
       (cons (string->symbol name) ffi-obj)))
   (make-hash pairs))
 
-(define (create-mapped-static-ffi ffi-data file ffi-name lib-path . headers)
-  (define ffi-map
-    (apply format-ffi-obj-map (cons ffi-data (cons lib-path headers))))
-  (export-mapped-ffi file ffi-name lib-path headers ffi-map))
 
-(define (create-static-ffi ffi-data file ffi-name lib-path . headers)
-  (define ffi-map
-    (apply format-ffi-obj-map (cons ffi-data (cons lib-path headers))))
-  (export-ffi file ffi-name lib-path headers ffi-map))
+;; The following functions feel ambiguously named to me, so I'll
+;; document their exact usage in more detail.
 
+;; The export ffi functions are the core exporting functions
+;; They take a formatted ffi map produced by format-ffi-obj-map
+;; and export an ffi to an output file
 (define (export-mapped-ffi file ffi-name lib-path headers ffi-map)
   (define template-port (open-input-file mapped-ffi-template-path))
   (define template (port->string template-port))
@@ -154,3 +171,32 @@
    (λ () (printf template
            ffi-name lib-path ffi-name (format-string-list headers)
            ffi-name formatted-definitions))))
+
+;; The create ffi functions take unformatted ffi metadata produced by
+;; dffi:dynamic-ffi-parse, format the data for export, and wrap the export
+;; ffi functions.  These are useful when ffi-data is generated earlier
+;; in a routine and used by other functions than just export.
+;; define-dynamic-ffi/cached in cached.rkt is an example of this.
+(define (create-mapped-static-ffi ffi-data file ffi-name lib-path . headers)
+  (define ffi-map
+    (apply format-ffi-obj-map (cons ffi-data (cons lib-path headers))))
+  (export-mapped-ffi file ffi-name lib-path headers ffi-map))
+
+(define (create-static-ffi ffi-data file ffi-name lib-path . headers)
+  (define ffi-map
+    (apply format-ffi-obj-map (cons ffi-data (cons lib-path headers))))
+  (export-ffi file ffi-name lib-path headers ffi-map))
+
+;; The generate ffi functions are the only user-facing export functions
+;; provided by dynamic-ffi/unsafe.  These functions take only the
+;; desired ffi name, the lib file, and the header files, and invoke
+;; dffi:dynamic-ffi-parse themselves to export a static ffi.
+(define (generate-mapped-static-ffi ffi-name file lib-path . headers)
+  (define ffi-data (apply dffi:dynamic-ffi-parse headers))
+  (apply generate-mapped-static-ffi (append (list ffi-data file ffi-name lib-path) headers)))
+
+(define (generate-static-ffi ffi-name file lib-path . headers)
+  (define ffi-data (apply dffi:dynamic-ffi-parse headers ))
+  (apply generate-mapped-static-ffi (append (list ffi-data file ffi-name lib-path) headers)))
+  
+

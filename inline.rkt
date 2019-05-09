@@ -2,13 +2,14 @@
 
 (require openssl/sha1
          racket/system
+         racket/runtime-path
          (for-syntax
            racket/base
-           racket/syntax)
-         "../runtime-paths.rkt"
+           racket/syntax
+           syntax/parse)
          "cached.rkt")
 
-(provide (all-defined-out))
+(provide define-inline-ffi)
 
 (define default-flags
   "-shared -Wl,-undefined,dynamic_lookup -fPIC -O2")
@@ -49,12 +50,10 @@
   (system cmd)
   (void))
 
-(define-syntax-rule (inline key code ...)
-  (list key (string-append code ...)))
-
 (define-syntax (define-inline-ffi stx)
-  (syntax-case stx ()
-    [(_ key code ...)
+  (syntax-parse stx
+    [(_ key:id code ...)
+     #:declare code (expr/c #'string?)
      (with-syntax*
        ([name  (format-id #'key "~a" (syntax->datum #'key))]
        [source-code (format-id #'key "~a-source-code" (syntax->datum #'key))]
@@ -63,7 +62,7 @@
        [compiler (syntax (make-parameter 'auto))]
        [compile-flags (syntax (make-parameter "-shared -Wl,-undefined,dynamic_lookup -fPIC -O2"))])
      #'(begin
-         (define source-code (string-append code ...))
+         (define source-code (string-append code.c ...))
          (define source-file (get-cached-c-source-path source-code 'key))
          (define object-file (get-cached-c-obj-path source-code 'key))
          (unless (file-exists? source-file)

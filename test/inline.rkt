@@ -1,7 +1,7 @@
 #lang at-exp racket/base
 
 (require racket/format)
-(require "../experimental/inline.rkt")
+(require "../unsafe.rkt")
 
 (provide (all-defined-out))
 

@@ -6,15 +6,24 @@
   racket/format
   compiler/compiler
   openssl/sha1
-
+  racket/runtime-path
+  racket/contract
   (for-syntax racket/base
+              syntax/parse
               racket/syntax)
-  "../runtime-paths.rkt"
-  "../unsafe.rkt"
+  "ffi.rkt"
   "export.rkt"
-  (prefix-in dffi: "../meta.rkt"))
+  (prefix-in dffi: "meta.rkt"))
 
-(provide (all-defined-out))
+(provide 
+  define-dynamic-ffi/cached
+  ffi-cache-path
+  (contract-out
+    [timestamp<=? 
+     (-> (or/c string? path?) (or/c string? path?) any)]))
+
+(define-runtime-path ffi-cache-path
+  (build-path "compiled" "ffi-cache"))
 
 (define __debug #f)
 
@@ -80,37 +89,22 @@
   (apply create-mapped-static-ffi ffi-data
     cached-file-path ffi-name lib headers))
 
-(define (build-ffi-obj-map2 ffi-data lib . headers)
-  (unless (for/or ([ext '(".so" ".dylib" ".dll")])
-            (file-exists? (string-append lib ext)))
-    (error "file does not exist: " (string-append lib ".so")))
-  (define pairs
-    (for/list ([decl ffi-data])
-      (define name (dffi:declaration-name decl))
-      (define type (dffi:declaration-type decl))
-      (define ffi-obj
-        (if (dffi:enum-decl? decl)
-          (dffi:declaration-literal-value decl)
-          (get-ffi-obj name lib (make-dffi-obj type)
-            (λ () (printf "warning: ~a does not contain declared symbol ~a\n" lib name) #f))))
-      (cons (string->symbol name) ffi-obj)))
-  (make-hash
-    (filter (λ (x) (cdr x)) pairs)))
-
 (define-syntax (define-dynamic-ffi/cached stx)
-  (syntax-case stx ()
-    [(_ id lib header ...)
+  (syntax-parse stx
+    [(_ id:id lib header ...)
+     #:declare lib (expr/c #'(or/c string? path?))
+     #:declare header (expr/c #'(or/c string? path?))
      #'(define id
-        (let* ([cached-file-path (get-cached-ffi-path 'id lib header ...)]
+        (let* ([cached-file-path (get-cached-ffi-path 'id lib.c header ...)]
                [ffi-obj-map
-           (cond [(cache-valid? 'id cached-file-path lib header ...)
+           (cond [(cache-valid? 'id cached-file-path lib.c header.c ...)
                   (dynamic-require cached-file-path 'id)]
              [else
                (let ([ffi-data (dffi:dynamic-ffi-parse header ...)])
-                 (cache-ffi! ffi-data 'id cached-file-path lib header ...)
+                 (cache-ffi! ffi-data 'id cached-file-path lib.c header.c ...)
                  ((compile-zos #t)
                     (list cached-file-path) 'auto)
-                 (build-ffi-obj-map2 ffi-data lib header ...))])])
+                 (build-ffi-obj-map ffi-data lib.c header.c ...))])])
            (case-lambda
              [() ffi-obj-map]
              [(sym)

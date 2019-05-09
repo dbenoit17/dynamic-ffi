@@ -11,19 +11,19 @@
 (define string2 "world\n")
 
 ;; Builds an auto-ffi
-(define-mapped-ffi libc
-  "/usr/lib64/libc-2.28"
+(define-dynamic-ffi libc
+  "/usr/lib64/libc-2.29"
   "/usr/include/string.h"
   "/usr/include/stdio.h"
   "/usr/include/stdio_ext.h")
 
 (define (libc-strcat x y)
-  (libc-fncall 'strcat x y))
+  (libc 'strcat x y))
 
 
 (define (libc-printf s)
   ;; Does not work with varargs
-  (libc-fncall 'printf s)
+  (libc 'printf s)
   (void))
 
 ;; Doesn't seem to be overwriting memory?
@@ -42,7 +42,7 @@
 (libc-printf "\n")
 
 (define (enum-ref-print enum)
-  (printf "  ~a: ~a\n" enum (libc-ref enum)))
+  (printf "  ~a: ~a\n" enum (libc enum)))
 
 (printf "\n enums constants: \n")
 (enum-ref-print 'FSETLOCKING_BYCALLER)

@@ -1,10 +1,10 @@
 #lang racket/base
 
 ;(require "../unsafe.rkt")
-(require "../experimental/cached.rkt")
+(require "../unsafe.rkt")
 
-(define-dynamic-ffi/cached libc
-  "/usr/lib64/libc-2.28"
+(define-dynamic-ffi libc
+  "/usr/lib64/libc-2.29"
   "/usr/include/stdio.h")
 
 (libc 'printf "hello world\n")
