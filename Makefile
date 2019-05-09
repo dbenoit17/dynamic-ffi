@@ -11,3 +11,6 @@ clean:
 
 clean-cache:
 	rm -rf compiled/ffi-cache
+
+test: clean-cache reinstall
+	raco test -p dynamic-ffi
