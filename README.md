@@ -6,13 +6,13 @@ headers via clang.
 
 This module is currently only available for GNU/Linux.
 
-##Installation
+## Installation
 To install the package:
 ```
 raco pkg install https://github.com/dbenoit17/dynamic-ffi.git
 ```
 
-###Dependencies:
+### Dependencies:
 * racket
 * llvm and clang development headers and libraries
 
