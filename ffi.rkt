@@ -111,18 +111,14 @@
     [(_ id:id lib header ...)
      #:declare lib (expr/c #'(or/c string? path?))
      #:declare header (expr/c #'(or/c string? path?))
-     (with-syntax
-       ([obj-map (format-id #'id "~a" (syntax->datum #'id))]
-        [obj-ref (format-id #'id "~a-ref" (syntax->datum #'id))]
-        [obj-run (format-id #'id "~a-fncall" (syntax->datum #'id))])
        #'(define id
            (let* ([ffi-data (dffi:dynamic-ffi-parse header ...)]
                   [ffi-obj-map (build-ffi-obj-map ffi-data lib header ...)])
-           (case-lambda
-             [() ffi-obj-map]
-             [(sym)
-              (let ([obj (hash-ref ffi-obj-map sym)])
-                (if (procedure? obj) (obj) obj))]
-             [(sym . args)
-              (let ([obj (hash-ref ffi-obj-map sym)])
-                (apply obj args))]))))]))
+              (case-lambda
+                [() ffi-obj-map]
+                [(sym)
+                 (let ([obj (hash-ref ffi-obj-map sym)])
+                   (if (procedure? obj) (obj) obj))]
+                [(sym . args)
+                 (let ([obj (hash-ref ffi-obj-map sym)])
+                   (apply obj args))])))]))
