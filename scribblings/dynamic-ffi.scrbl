@@ -52,8 +52,8 @@ is called with no arguments, a hash-map of all symbols and ffi objects in the li
 
 
 Note: libc may have a different version number on your system, so you may 
-need to update this path accordingly.  In the future, support is planned for 
-parity with how ffi-obj handles libraries.
+need to update this example path accordingly.  In the future, support is
+planned for parity with how ffi-obj handles libraries.
 
 @defform[(define-dynamic-ffi/cached id lib header ...) 
          #:contracts ([id identifier?] 
