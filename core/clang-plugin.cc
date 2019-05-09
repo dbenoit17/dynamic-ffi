@@ -310,7 +310,6 @@ c_decl_array dynamic_ffi_parse(int argc, const char **argv, int deep_parse) {
          << "See Clang output for more details.  Exiting...\n";
     exit(ret);
   } */
-  fprintf(stderr, "parse complete\n");
 
   std::vector<c_decl> vdecls = acc.get_c_decls();
   c_decl * declarations = (c_decl*) malloc(sizeof(c_decl) * vdecls.size());

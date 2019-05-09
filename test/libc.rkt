@@ -26,7 +26,6 @@
   (libc 'printf s)
   (void))
 
-
 ;; This should be a buffer overflow
 (define x (libc-strcat string1 string2))
 
@@ -45,5 +44,4 @@
 (enum-ref-print 'FSETLOCKING_BYCALLER)
 (enum-ref-print  'FSETLOCKING_INTERNAL)
 (enum-ref-print  'FSETLOCKING_QUERY)
-
 

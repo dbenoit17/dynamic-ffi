@@ -31,6 +31,8 @@
 
 (require 'ctype-defs)
 
+(define _debug #f)
+
 (define (dynamic-ffi-wrapper . files-list)
   (define (path->byte-string path)
     (cond [(bytes? path) path]
@@ -45,6 +47,7 @@
   (define c-decls-list
     (apply dynamic-ffi-parse
       (cons #"dynamic-ffi-parse" byte-string-paths)))
+  (when _debug (printf "parse complete\n"))
   (map make-declaration c-decls-list))
 
 ;; Where d is a list obtained from dynamic-ffi-parse
