@@ -26,9 +26,9 @@
          any)]))
 
 (define-runtime-path mapped-ffi-template-path
-  (build-path "experimental" "template-files" "mapped-ffi-template"))
+  (build-path "template-files" "mapped-ffi-template"))
 (define-runtime-path defined-ffi-template-path
-  (build-path "experimental" "template-files" "defined-ffi-template"))
+  (build-path "template-files" "defined-ffi-template"))
 
 (define (format-list l)
   (format "(list ~a)"
