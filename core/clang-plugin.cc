@@ -86,7 +86,7 @@ c_decl ffi::ffiASTConsumer::make_decl_from_enum_constant(const Decl *dec) {
    const EnumConstantDecl  *d = dyn_cast<EnumConstantDecl>(dec);
 
    std::string cxx_name = d->getNameAsString();
-   char* st = "enum";
+   const char* st = "enum";
    char *name = (char*) malloc(sizeof(char*) * (cxx_name.length() + 1));
    char *type_str = (char*) malloc(sizeof(char*) * (strlen(st)+ 1));
    strcpy(name, cxx_name.c_str());
@@ -105,7 +105,7 @@ c_decl ffi::ffiASTConsumer::make_decl_from_function(const Decl *dec) {
    const FunctionDecl  *d = dyn_cast<FunctionDecl>(dec);
 
    std::string cxx_name = d->getNameAsString();
-   char* st = "function";
+   const char* st = "function";
    char *name = (char*) malloc(sizeof(char*) * (cxx_name.length() + 1));
    char *type_str = (char*) malloc(sizeof(char*) * (strlen(st)+ 1));
    strcpy(name, cxx_name.c_str());
@@ -121,7 +121,7 @@ c_decl ffi::ffiASTConsumer::make_decl_from_record(const Decl *dec) {
    const RecordDecl  *d = dyn_cast<RecordDecl>(dec);
 
    std::string cxx_name = d->getNameAsString();
-   char* st = "struct";
+   const char* st = "struct";
    char *name = (char*) malloc(sizeof(char*) * (cxx_name.length() + 1));
    char *type_str = (char*) malloc(sizeof(char*) * (strlen(st)+ 1));
    strcpy(name, cxx_name.c_str());
