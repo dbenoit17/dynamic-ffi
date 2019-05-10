@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require dynamic-ffi/unsafe)
+(require "../../unsafe.rkt")
 
 
 (generate-mapped-static-ffi 'libc 

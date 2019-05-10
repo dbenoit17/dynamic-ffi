@@ -52,15 +52,19 @@
 
 (define-syntax (define-inline-ffi stx)
   (syntax-parse stx
-    [(_ key:id code ...)
+    [(_ key:id 
+       (~optional (~seq #:compile-flags flags))
+       (~optional (~seq #:compiler compiler))
+        code ...)
      #:declare code (expr/c #'string?)
+     #:declare compiler (expr/c #'string?)
+     #:declare flags (expr/c #'string?)
      (with-syntax*
        ([name  (format-id #'key "~a" (syntax->datum #'key))]
        [source-code (format-id #'key "~a-source-code" (syntax->datum #'key))]
        [source-file (format-id #'key "~a-source-file-path" (syntax->datum #'key))]
        [object-file (format-id #'key "~a-object-file-path" (syntax->datum #'key))]
-       [compiler (syntax (make-parameter 'auto))]
-       [compile-flags (syntax (make-parameter "-shared -Wl,-undefined,dynamic_lookup -fPIC -O2"))])
+       [compile-flags (syntax "-shared -Wl,-undefined,dynamic_lookup -fPIC -O2")])
      #'(begin
          (define source-code (string-append code.c ...))
          (define source-file (get-cached-c-source-path source-code 'key))
@@ -70,6 +74,9 @@
          (unless (and (file-exists? source-file)
                       (file-exists? object-file)
                    (timestamp<=? source-file object-file))
-           (cache-compile-inline-c source-code #:key 'key #:compiler (compiler) #:compile-flags (compile-flags)))
+           (cache-compile-inline-c source-code  #:key 'key 
+                                   #:compiler (~? (~@ compiler) (~@ 'auto)) 
+                                   #:compile-flags (format "~a ~a" (~? (~@ flags) (~@ ""))
+                                                      compile-flags)))
          (define-dynamic-ffi/cached name (format "~a" source-file) source-file)))]))
 

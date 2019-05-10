@@ -43,6 +43,8 @@ Parses headers for syntax tree data and builds dynamic ffi bindings.  The result
 as the first argument, and the C function parameters as the rest.  If the defined @racket[id]
 is called with no arguments, a hash-map of all symbols and ffi objects in the library is returned.
 
+The @racket[lib] argument can be a relative library created using @racket[dynamic-ffi-lib], or a hard-coded path omitting the object file extension.
+
 @racketblock[
 (require dynamic-ffi/unsafe)
 
@@ -58,6 +60,8 @@ is called with no arguments, a hash-map of all symbols and ffi objects in the li
                                   (listof string?))]
 Takes a library base name and shared object versions, and produces
 a list argument which can be used in place of a hard-coded system object file path.
+In the above @racket[define-dynamic-ffi] example, Racket will search for @racket[libc.so.6]
+in the default system library paths.
 
 @defform[(define-dynamic-ffi/cached id lib header ...) 
          #:contracts ([id identifier?] 
@@ -90,11 +94,14 @@ produced by @racket[define-dynamic-ffi].
 This library allows users to write C functions inline, which will be compiled
 at runtime and provided as a dynamic FFI.
 
-@defform[(define-inline-ffi name code ...) 
+@defform[(define-inline-ffi name code ... [#:compiler compiler]
+                                          [#:compile-flags flags]) 
          #:contracts ([name identifier?] 
-                      [code string?])]
+                      [code string?]
+                      [compiler string?]
+                      [flags (or/c string? 'auto)])]
 
-This function is designed for use with the at-reader.
+Define ffi bindings by writing inline C code.  This function is designed for use with the at-reader.
 
 @racketblock[
 (define-inline-ffi mylib
@@ -103,4 +110,28 @@ This function is designed for use with the at-reader.
   "}")
 
 (mylib 'add 3 4)]
+
+Extra compile flags can be passed to @racket[define-inline-ffi], and the
+default compiler can be overridden.
+
+@racketblock[
+(define-inline-ffi libm #:compile-flags "-lm" #:compiler "clang"
+  "#include <math.h>"
+  "double square_root(double x) {"
+  "  return sqrt(x);"
+  "}")
+(libm 'square_root 16)]
+
+@section{Limitations}
+This library is able to generate dynamic ffi bindings for a fairly
+large portion of the C language standard.  Occasionally we find
+special declaration types that clang treats differently, which
+the library may not have support for yet.  When such declarations are
+encountered, @racket[dynamic-ffi] will emit error messages with
+details about the missing functionality.  Please report any issues you
+find at project issue tracker at https://github.com/dbenoit17/dynamic-ffi.
+
+As a workaround in almost every case, @racket[define-inline-ffi] can be used to write
+a wrapper around functions that @racket[dynamic-ffi] is unable to parse.
+
 

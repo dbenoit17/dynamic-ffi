@@ -2,7 +2,7 @@
 
 (require rackunit
          rackunit/text-ui
-         dynamic-ffi/unsafe)
+         "../unsafe.rkt")
 
 @define-inline-ffi[mylib]{
   #include <stdio.h>
@@ -62,6 +62,14 @@
             :"=r"(y)
             :"a"(x),"b"(y));
     return y;
+  }
+}
+
+@define-inline-ffi[libm #:compile-flags "-lm" #:compiler "clang"]{
+  #include <math.h>
+
+  double square_root(double x) {
+    return sqrt(x);
   }
 }
 
@@ -130,6 +138,10 @@
     (test-case
      "shorten string"
      (check-equal?  (mylib 'shorten "hello world") "hello"))
+    (test-case
+     "test linking libm"
+       (let ([num (random 10000)])
+         (check-equal? (libm 'square_root num) (sqrt num))))
 ))
 
 (run-tests tests)

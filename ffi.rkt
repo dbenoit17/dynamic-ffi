@@ -33,7 +33,7 @@
 (define (make-ffi-float ct-float)
   (define width (dffi:ctype-width ct-float))
   (cond [(eq? width 32) _float]
-        [(eq? width 64) _double]
+        [(eq? width 64) _double*]
         [(eq? width 80) _longdouble]
         [(eq? width 128) _longdouble]
         [else (error "incompatible float width: " width)]))

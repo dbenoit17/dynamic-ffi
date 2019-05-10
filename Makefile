@@ -1,6 +1,9 @@
 all:
 	racket make.rkt
 
+install:
+	raco pkg install
+
 reinstall:
 	raco pkg remove dynamic-ffi
 	raco pkg install

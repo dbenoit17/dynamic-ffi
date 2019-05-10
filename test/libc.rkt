@@ -2,7 +2,7 @@
 
 (require rackunit
          rackunit/text-ui
-         dynamic-ffi/unsafe)
+         "../unsafe.rkt")
 
 (define-dynamic-ffi libc
   (dynamic-ffi-lib "libc" "6")
