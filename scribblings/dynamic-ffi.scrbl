@@ -2,7 +2,7 @@
 
 @title{Dynamic FFI}
 
-@author[(author+email "David Benoit" "dbenoit@redhat.com")]
+@author[(author+email "David Benoit" "dbenoit@fedoraproject.org")]
 
 @require[@for-label[dynamic-ffi/unsafe
                     racket/base]]
