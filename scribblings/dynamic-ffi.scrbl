@@ -104,7 +104,7 @@ in the default system library paths.
          #:contracts ([id identifier?]
                       [lib (or/c string? path?)]
                       [header (or/c string? path?)])]
-This function behaves the same way as @racket[define-dynamic-ffi], except it caches
+This form behaves the same way as @racket[define-dynamic-ffi], except it caches
 static ffi bindings so that they do not need to be recomputed in future program executions.
 
 @section{Generating Static FFIs}
@@ -138,7 +138,7 @@ at runtime and provided as a dynamic FFI.
                       [compiler string?]
                       [flags (or/c string? 'auto)])]
 
-Define ffi bindings by writing inline C code.  This function is designed for use with the at-reader.
+Define ffi bindings by writing inline C code.  This form is designed for use with the at-reader.
 
 @racketblock[
 (define-inline-ffi mylib
