@@ -21,34 +21,35 @@
 (define-runtime-path clang-export.c
   (build-path "core" "clang-export.c"))
 
-(define-runtime-path dynamic-extension-dir
- (build-path "compiled" "native" (system-library-subpath)))
-
-(define-runtime-path shared-object-dir
+(define-runtime-path compiled-native-dir
  (build-path "compiled" "native"))
 
+(define-runtime-path compiled-dir
+ (build-path "compiled"))
+
+(define-runtime-path dynamic-extension-dir
+ (build-path "private" "native" (system-library-subpath)))
+
+(define-runtime-path shared-object-dir
+ (build-path "private" "native"))
+
 (define-runtime-path dynamic-ffi_3m.o
-  (build-path "compiled" "native" "dynamic-ffi_3m.o"))
+  (build-path "private" "native" "dynamic-ffi_3m.o"))
 
 (define-runtime-path wrap-fork.so
-  (build-path "compiled" "native"
+  (build-path "private" "native" (system-library-subpath #f)
     (path-add-suffix "wrap-fork" (system-type 'so-suffix))))
 
 (define-runtime-path clang-plugin.so
-  (build-path "compiled" "native"
+  (build-path "private" "native" (system-library-subpath #f)
     (path-add-suffix "clang-plugin" (system-type 'so-suffix))))
 
 (define-runtime-path clang-export.so
-  (build-path "compiled" "native"
+  (build-path "private" "native" (system-library-subpath #f)
     (path-add-suffix "clang-export" (system-type 'so-suffix))))
 
 (define-runtime-path clang-export-lib
-  (build-path "compiled" "native" "clang-export"))
-
-(define-runtime-path dynamic-ffi-core_rkt.so
-  (build-path "compiled" "native" (system-library-subpath)
-    (path-add-suffix "dynamic-ffi-core_rkt" (system-type 'so-suffix))))
-
+  (build-path "private" "native" "clang-export"))
 
 ;; Test Paths
 (define-runtime-path dynamic-ffi-tests

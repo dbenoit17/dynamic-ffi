@@ -1,3 +1,6 @@
+/* This header declares C types and constructors
+   for storing AST metadata extracted from clang. */
+
 #ifndef DYNAMIC_FFI_H
 #define DYNAMIC_FFI_H
 
@@ -5,10 +8,13 @@
 #include <string.h>
 #include <stdint.h>
 
+/* The exporting functions need to have C linkage
+   to be bound more easily to high level languages */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* enum to represent C builtin types */
 typedef enum {
   INTEGER,
   FLOATING,
@@ -25,6 +31,7 @@ typedef enum {
 } c_type_id;
 
 
+/* enum to categorize C declarations */
 typedef enum {
   FUNCTION_DECL,
   GLOBAL_VAR_DECL,
@@ -64,6 +71,7 @@ inline c_type *c_type_pointer_deref(c_type *t) {
   return t->fields;
 }
 
+/* constructor fwd decls */
 c_decl make_global_var_decl(char* name, c_type ctype, char* type_str, void *val);
 c_decl make_record_decl(char* name, c_type ctype, char* type_str, void *val);
 c_decl make_function_decl(char* name, c_type ctype, char* type_str, void *val);

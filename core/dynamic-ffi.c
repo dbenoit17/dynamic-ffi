@@ -1,3 +1,7 @@
+/* This file provides a native extension to
+   Racket for interfacing with the dynamic-ffi
+   routines. */
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>

@@ -1,3 +1,6 @@
+;; This module provides functions for exporting
+;; FFI bindings as shippable racket files.
+
 #lang racket/base
 
 (require
@@ -120,6 +123,9 @@
    (error "void only allowed as pointer or function return")]
   [else (error "unimplemented type")]))
 
+;; This is equivalent to build-ffi-obj-map in ffi.rkt,
+;; except it produces racket source code instead
+;; of runtime ffi objects.
 (define (format-ffi-obj-map ffi-data lib . headers)
   (define pairs
     (for/list ([decl ffi-data])

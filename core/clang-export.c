@@ -1,6 +1,8 @@
 #include "clang-plugin.hh"
 #include "clang-export.h"
 
+/* The exporting functions need to have C linkage
+   to be bound more easily to high level languages */
 #ifdef __cplusplus
 extern "C" {
 #endif

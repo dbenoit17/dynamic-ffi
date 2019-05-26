@@ -1,3 +1,7 @@
+;; This module provides the basic functionality
+;; for dynamic-ffi.  It converts AST metadata
+;; from meta.rkt into racket's builtin ffi objects.
+
 #lang racket/base
 
 (require
@@ -96,9 +100,15 @@
    (error "void only allowed as pointer or function return")]
   [else (error "unimplemented type")]))
 
+;; This should probably return a custom type
+;; instead of a list.  See the description
+;; in the module docs for how it is used.
 (define (dynamic-ffi-lib lib . versions)
   (cons lib versions))
 
+;; Take a shared library and headers.
+;; Build a mapping of function symbols
+;; with their corresponding ffi objects.
 (define (build-ffi-obj-map ffi-data lib . headers)
   (define ffi-library 
     (cond [(ffi-lib? lib) lib]

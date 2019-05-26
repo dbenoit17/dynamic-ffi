@@ -1,5 +1,7 @@
 all:
 	racket make.rkt
+link:
+	racket -e "(require \"make.rkt\") (raco-link)"
 
 install:
 	raco pkg install
@@ -11,9 +13,10 @@ reinstall:
 
 clean:
 	rm -rf compiled/native
+	rm -rf private/native
 
 clean-cache:
 	rm -rf compiled/ffi-cache
 
-test: clean-cache reinstall
+test: clean-cache
 	raco test -p dynamic-ffi

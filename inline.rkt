@@ -1,3 +1,7 @@
+;; This module provides a macro for defining
+;; inline FFIs.
+
+
 #lang racket/base
 
 (require openssl/sha1
@@ -44,7 +48,7 @@
       (find-executable-path c)))
   (define source (get-cached-c-source-path c-code key))
   (unless compiler
-    (error "could not find compiler on path"))
+    (error "could not find compiler on path: " compiler))
   (define object-file (get-cached-c-obj-path c-code key))
   (define cmd (format "~a ~a -o ~a ~a" compiler source object-file flags))
   (system cmd)
@@ -53,8 +57,8 @@
 (define-syntax (define-inline-ffi stx)
   (syntax-parse stx
     [(_ key:id 
-       (~optional (~seq #:compile-flags flags))
-       (~optional (~seq #:compiler compiler))
+       (~optional (~seq #:compile-flags flags) #:defaults ([flags #'""]))
+       (~optional (~seq #:compiler compiler) #:defaults ([compiler #''auto]))
         code ...)
      #:declare code (expr/c #'string?)
      #:declare compiler (expr/c #'string?)
@@ -64,7 +68,8 @@
        [source-code (format-id #'key "~a-source-code" (syntax->datum #'key))]
        [source-file (format-id #'key "~a-source-file-path" (syntax->datum #'key))]
        [object-file (format-id #'key "~a-object-file-path" (syntax->datum #'key))]
-       [compile-flags (syntax "-shared -Wl,-undefined,dynamic_lookup -fPIC -O2")])
+       [compile-flags
+        (syntax (format "~a ~a" default-flags flags))])
      #'(begin
          (define source-code (string-append code.c ...))
          (define source-file (get-cached-c-source-path source-code 'key))
@@ -75,8 +80,7 @@
                       (file-exists? object-file)
                    (timestamp<=? source-file object-file))
            (cache-compile-inline-c source-code  #:key 'key 
-                                   #:compiler (~? (~@ compiler) (~@ 'auto)) 
-                                   #:compile-flags (format "~a ~a" (~? (~@ flags) (~@ ""))
-                                                      compile-flags)))
+                                   #:compiler compiler 
+                                   #:compile-flags compile-flags))
          (define-dynamic-ffi/cached name (format "~a" source-file) source-file)))]))
 

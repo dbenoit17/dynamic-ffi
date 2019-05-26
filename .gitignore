@@ -4,7 +4,6 @@
 .DS_Store
 compiled/
 /doc/
-*.so
 *.swp
 llvm
 build

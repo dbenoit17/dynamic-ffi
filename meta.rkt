@@ -1,13 +1,32 @@
+;; This file provides an API for obtaining 
+;; AST declaration metadata for C data types and 
+;; functions
+
 #lang racket/base
 
-(require racket/list
-         "dynamic-ffi-core.rkt")
+
+(require (for-syntax racket/base)
+         racket/list
+         racket/runtime-path
+         "common.rkt")
 
 (provide declaration
          (all-from-out 'ctype-defs)
          (rename-out
            [dynamic-ffi-wrapper
            dynamic-ffi-parse]))
+
+(define-runtime-path dynamic-ffi-core.rkt "dynamic-ffi-core.rkt")
+
+;; Check for existance of the native extension
+;; if it is not built, warn the user about
+;; the missing dependencies.
+(define dynamic-ffi-parse
+  (if (file-exists? dynamic-ffi-core_rkt.so)
+    (dynamic-require dynamic-ffi-core.rkt 'dynamic-ffi-parse)
+    (λ (x . args)
+      (warn-dependencies)
+      (exit 1))))
 
 (module ctype-defs racket/base
  (struct declaration [name type type-string literal-value] #:transparent)
@@ -31,8 +50,13 @@
 
 (require 'ctype-defs)
 
+;; This module will provide extra debug
+;; output when __ debug is #t
 (define _debug #f)
 
+;; Take a list of path-like things (c headers),
+;; convert them to byte strings, and call
+;; out to the native extension routine
 (define (dynamic-ffi-wrapper . files-list)
   (define (path->byte-string path)
     (cond [(bytes? path) path]

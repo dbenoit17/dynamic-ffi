@@ -1,3 +1,17 @@
+/* 
+   Please do not think of this header as some kind of OOP
+   public interface.
+   
+   The only thing in this header intended to be public
+   is the function `dynamic-ffi-parse`. Everything else
+   should be considered private to be used inside that
+   function alone.
+
+   The only purpose of using C++/OOP here is to extract
+   the AST data from clang and convert it to pure 
+   C structs, which can be consumed by high level
+   language FFI libraries. */
+
 #ifndef DYNAMIC_FFI_PLUGIN_H
 #define DYNAMIC_FFI_PLUGIN_H
 
@@ -23,7 +37,6 @@
 using namespace clang::tooling;
 using namespace clang;
 using namespace llvm;
-
 
 c_decl_array dynamic_ffi_parse(int argc, const char **argv, int deep_parse);
 

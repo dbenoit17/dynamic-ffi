@@ -25,9 +25,8 @@
 
 (module+ test
   ;; Tests to be run with raco test
-  (require 
-    "test/inline.rkt"
-    "test/libc.rkt"))
+)
+
 
 (module+ main
   ;; Main entry point, executed when run with the `racket` executable or DrRacket.

@@ -1,3 +1,6 @@
+;; This module provides functions for
+;; caching and loading static ffi bindings.
+
 #lang racket/base
 
 (require
@@ -13,6 +16,7 @@
               racket/syntax)
   "ffi.rkt"
   "export.rkt"
+  "common.rkt"
   (prefix-in dffi: "meta.rkt"))
 
 (provide 
@@ -53,6 +57,7 @@
   (build-path ffi-cache-path 
     (format "~a.~a.ffi.rkt" (escape-for-path (format "~a" ffi-name)) ffi-digest)))
 
+;; Check if a cached ffi uses the correct headers
 (define (headers-equal? ffi-name cached-file-path headers)
   (define cached-headers
     (dynamic-require cached-file-path
@@ -64,6 +69,7 @@
   (debug-msg (format "header-equal? ~a\n" result))
   result)
 
+;; Check if a cached ffi uses the correct lib
 (define (lib-equal? ffi-name cached-file-path lib)
   (define cached-lib
     (dynamic-require cached-file-path
@@ -72,11 +78,6 @@
   (define result (equal? lib cached-lib))
   (debug-msg (format "lib-equal? ~a\n" result))
   result)
-
-; also defined in make.rkt
-(define (timestamp<=? i o)
-  (<= (file-or-directory-modify-seconds i)
-      (file-or-directory-modify-seconds o)))
 
 (define (timestamps-valid? ffi-name cached-file-path lib headers)
   (define suffix (system-type 'so-suffix))
@@ -92,7 +93,6 @@
 (define (cache-ffi! ffi-data ffi-name cached-file-path lib . headers)
   (apply create-mapped-static-ffi ffi-data
     cached-file-path ffi-name lib headers))
-
 
 (define-syntax (define-dynamic-ffi/cached stx)
   (syntax-parse stx

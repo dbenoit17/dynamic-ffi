@@ -60,7 +60,7 @@ c_decl_array fork_ffi_parse(int argc, const char** argv) {
 
   c_decl_array decls;
   int fd_data[2];
-  int i;
+  unsigned int i;
 
   int * pipe_ready = NULL;
   pthread_cond_t * cond = NULL;
@@ -170,7 +170,7 @@ c_decl read_decl(int * pipe_ready, int fdin, pthread_mutex_t *mutex, pthread_con
 
 c_type read_ctype(int *pipe_ready, int fdin, pthread_mutex_t *mutex, pthread_cond_t *cond) {
   c_type new_type;
-  int i;
+  unsigned int i;
   /* (0) read ctype */
   sync_read(pipe_ready, fdin, &new_type, sizeof(c_type), mutex,cond);
 
@@ -224,7 +224,7 @@ void write_decl(int *pipe_ready, int fdout, c_decl old_decl,
 }
 
 void write_ctype(int *pipe_ready, int fdout, c_type old_type, pthread_mutex_t *mutex, pthread_cond_t *cond) {
-  int i;
+  unsigned int i;
 
   /* (0) write ctype */
   sync_write(pipe_ready, fdout, &old_type, sizeof(c_type), mutex, cond);
