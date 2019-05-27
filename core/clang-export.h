@@ -73,6 +73,7 @@ inline c_type *c_type_pointer_deref(c_type *t) {
 
 /* constructor fwd decls */
 c_decl make_global_var_decl(char* name, c_type ctype, char* type_str, void *val);
+c_decl make_typedef_decl(char* name, c_type ctype, char* type_str, void *val);
 c_decl make_record_decl(char* name, c_type ctype, char* type_str, void *val);
 c_decl make_function_decl(char* name, c_type ctype, char* type_str, void *val);
 c_decl make_enum_decl(char* name, c_type ctype, char* type_str, void *val);

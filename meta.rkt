@@ -72,7 +72,9 @@
     (apply dynamic-ffi-parse
       (cons #"dynamic-ffi-parse" byte-string-paths)))
   (when _debug (printf "parse complete\n"))
-  (map make-declaration c-decls-list))
+  (map make-declaration
+    (filter (λ (decl) (> (string-length (decl-name decl)) 0))
+      c-decls-list)))
 
 ;; Where d is a list obtained from dynamic-ffi-parse
 (define (make-declaration d)
@@ -83,6 +85,7 @@
          (cons 'function-decl function-decl)
          (cons 'record-decl record-decl)
          (cons 'enum-decl enum-decl)
+         (cons 'typedef-decl typedef-decl)
          (cons 'unknown (λ (x)x)))))
   (define ct (decl-ctype d))
   (define dispatch (hash-ref decl-hash (decl-type-sym d)))

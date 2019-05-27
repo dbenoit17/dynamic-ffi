@@ -84,6 +84,17 @@ c_decl make_record_decl(char* name, c_type ctype, char* type_str, void * val) {
   return d;
 }
 
+c_decl make_typedef_decl(char* name, c_type ctype, char* type_str, void * val) {
+  c_decl d;
+  d.name = name;
+  d.base = TYPEDEF_DECL;
+  d.ctype = ctype;
+  d.type_str = type_str;
+  d.val = val;
+
+  return d;
+}
+
 c_decl make_function_decl(char* name, c_type ctype, char* type_str, void *val) {
   c_decl d;
   d.name = name;

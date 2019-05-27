@@ -40,6 +40,9 @@ using namespace ffi;
 
 static llvm::cl::OptionCategory MyToolCategory("my-tool options");
 
+/* https://clang.llvm.org/doxygen/classclang_1_1Type.html
+   https://clang.llvm.org/doxygen/classclang_1_1TargetInfo.html */
+
 //#define DYNAMIC_FFI_DEBUG
 
 #ifdef DYNAMIC_FFI_DEBUG
@@ -122,8 +125,9 @@ bool ffi::ffiASTConsumer::HandleTopLevelDecl(DeclGroupRef decls) {
         accumulator.push_decl(d);
       }
       else if (const TypedefDecl  *typedef_decl = dyn_cast<TypedefDecl>((Decl*) *i)) {
-        //c_decl d = make_decl_from_typedef(typedef_decl);
-        //accumulator.push_decl(d);
+        
+        c_decl d = make_decl_from_typedef(typedef_decl);
+        accumulator.push_decl(d);
       }
       else {
         fprintf(stderr, "\ndynamic-ffi: unimplemented decl at: \n");
@@ -200,6 +204,22 @@ c_decl ffi::ffiASTConsumer::make_decl_from_record(const Decl *dec) {
    c_type ctype = dispatch_on_type(rt->getCanonicalTypeUnqualified(), dec);
 
    return make_record_decl(name, ctype, type_str, NULL);
+}
+
+c_decl ffi::ffiASTConsumer::make_decl_from_typedef(const Decl *dec) {
+   const TypedefDecl  *d = dyn_cast<TypedefDecl>(dec);
+
+   std::string cxx_name = d->getNameAsString();
+   const char* st = "typedef";
+   char *name = (char*) malloc(sizeof(char*) * (cxx_name.length() + 1));
+   char *type_str = (char*) malloc(sizeof(char*) * (strlen(st)+ 1));
+   strcpy(name, cxx_name.c_str());
+   strcpy(type_str, st);
+
+   QualType type =  d->getUnderlyingType();
+   c_type ctype = dispatch_on_type(type, dec);
+
+   return make_typedef_decl(name, ctype, type_str, NULL);
 }
 
 c_decl ffi::ffiASTConsumer::make_decl_from_global_var(const Decl *dec) {

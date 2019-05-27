@@ -132,12 +132,19 @@
       (define name (dffi:declaration-name decl))
       (define type (dffi:declaration-type decl))
       (define ffi-obj
-        (if (dffi:enum-decl? decl)
-          (format "~a" (dffi:declaration-literal-value decl))
-          (format "(get-ffi-obj '~a ~a\n    ~a \n    (warn-undefined-symbol '~a))" 
-            name lib (format-dffi-obj type) name)))
+        (cond [(dffi:enum-decl? decl)
+               (format "~a" (dffi:declaration-literal-value decl))]
+              [(or (dffi:record-decl? decl)
+                   (dffi:typedef-decl? decl))
+               (format-dffi-obj type)]
+              [(or (dffi:function-decl? decl)
+                   (dffi:var-decl? decl))
+               (format "(get-ffi-obj '~a ~a\n    ~a \n    (warn-undefined-symbol '~a))" 
+                name lib (format-dffi-obj type) name)]
+              [else
+                 (printf "warning: unimplemented delcaration type: ~a\n" decl)]))
       (cons (string->symbol name) ffi-obj)))
-  (make-hash pairs))
+  (make-hash (filter (λ (x) (cdr x)) pairs)))
 
 
 ;; The following functions feel ambiguously named to me, so I'll

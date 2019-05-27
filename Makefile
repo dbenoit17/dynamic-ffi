@@ -20,3 +20,8 @@ clean-cache:
 
 test: clean-cache
 	raco test -p dynamic-ffi
+
+typedef-test:
+	racket make.rkt
+	racket test/typedef-struct.rkt
+

@@ -121,10 +121,20 @@
       (define name (dffi:declaration-name decl))
       (define type (dffi:declaration-type decl))
       (define ffi-obj
-        (if (dffi:enum-decl? decl)
-          (dffi:declaration-literal-value decl)
-          (get-ffi-obj name ffi-library (make-dffi-obj type)
-            (λ () (printf "warning: ~a does not contain declared symbol ~a\n" lib name) #f))))
+        (cond [(= (string-length name) 0) #f]
+              [(dffi:enum-decl? decl)
+               (dffi:declaration-literal-value decl)]
+              [(or (dffi:record-decl? decl)
+                   (dffi:typedef-decl? decl))
+               (make-dffi-obj type)]
+              [(or (dffi:function-decl? decl) 
+                   (dffi:var-decl? decl))
+               (get-ffi-obj name ffi-library (make-dffi-obj type)
+                 (λ () 
+                   (printf "warning: ~a does not contain declared symbol ~a\n" 
+                    lib name) #f))]
+              [else
+                 (printf "warning: unimplemented delcaration type: ~a\n" decl)]))
       (cons (string->symbol name) ffi-obj)))
   (make-hash
     (filter (λ (x) (cdr x)) pairs)))

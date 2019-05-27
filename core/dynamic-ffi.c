@@ -114,6 +114,7 @@ const char* FUNCTION_DECL_SYM = "function-decl";
 const char* VAR_DECL_SYM = "var-decl";
 const char* RECORD_DECL_SYM = "record-decl";
 const char* ENUM_DECL_SYM = "enum-decl";
+const char* TYPEDEF_DECL_SYM = "typedef-decl";
 char* decl_to_str(c_decl *d) {
   const char * sym;
   switch (d->base) {
@@ -128,6 +129,9 @@ char* decl_to_str(c_decl *d) {
       break;
     case ENUM_DECL:
       sym = ENUM_DECL_SYM;
+      break;
+    case TYPEDEF_DECL:
+      sym = TYPEDEF_DECL_SYM;
       break;
     default:
       sym = "unknown-decl";
