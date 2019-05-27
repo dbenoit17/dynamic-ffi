@@ -59,7 +59,7 @@
 (define (format-ffi-float ct-float)
   (define width (dffi:ctype-width ct-float))
   (cond [(eq? width 32) '_float]
-        [(eq? width 64) '_double]
+        [(eq? width 64) '_double*]
         [(eq? width 80) '_longdouble]
         [(eq? width 128) '_longdouble]
         [else (error "incompatible float width: " width)]))
@@ -87,15 +87,16 @@
   (define struct-members
     (for/list ([mem (dffi:ctype-record-members ct-struct)])
       (format-dffi-obj mem)))
+  ;(define member-names (dffi:ctype-record-members ct-struct))
   (if (null? struct-members) #f
-  (format "(make-cstruct-type ~a)" struct-members)))
+    (format "(apply _list-struct ~a)" (format-list struct-members))))
 
 (define (format-ffi-union ct-union)
   (define union-members
     (for/list ([mem (dffi:ctype-record-members ct-union)])
       (format-dffi-obj mem)))
   (if (null? union-members) #f
-    (format "(apply make-union-type ~a)" union-members)))
+    (format "(apply _union ~a)" (format-list union-members))))
 
 (define (format-ffi-function ct-function)
   (define params

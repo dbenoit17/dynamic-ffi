@@ -15,7 +15,7 @@
 (define cc "clang++")
 (define ldflags+= "-shared -Wl,-undefined,dynamic_lookup")
 (define cflags+= "-fPIC")
-(define cxxflags+= "-fno-rtti -O2")
+(define cxxflags+= "-fno-rtti -O3")
 (define lflags+=
  (string-join
   (list "-lclangAST"

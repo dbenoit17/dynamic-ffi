@@ -13,6 +13,9 @@
 #include "clang-export.h"
 #include "wrap-fork.h"
 
+/* fork clang lingage by default */
+#define FORK_CLANG_PLUGIN
+
 const int struct_flags = SCHEME_STRUCT_NO_MAKE_PREFIX;
 Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object ** argv);
 Scheme_Object *make_decl_instance(c_decl *decl);
@@ -53,7 +56,11 @@ Scheme_Object *dynamic_ffi_parse(int argc, Scheme_Object **scheme_argv) {
 
   declarations = scheme_null;
 
+#ifdef FORK_CLANG_PLUGIN
   decls = fork_ffi_parse(argc, argv);
+#else
+  decls = ffi_parse(argc, argv);
+#endif
 
   for (i = 0; i < decls.length; ++i) {
     Scheme_Object *decl_scheme;
@@ -150,6 +157,7 @@ Scheme_Object *make_ctype_instance(c_type *t) {
   Scheme_Object *width;
   Scheme_Object *sym;
   Scheme_Object *field_list;
+  Scheme_Object *field_names;
 
   int i;
 
@@ -163,12 +171,19 @@ Scheme_Object *make_ctype_instance(c_type *t) {
 
   sym = scheme_intern_symbol(ctype_to_str(t));
   field_list = scheme_null;
+  field_names = scheme_null;
 
   for (i = t->field_length -1; i >= 0; --i) {
     Scheme_Object *new_field;
-
     new_field = make_ctype_instance(t->fields + i);
     field_list = scheme_make_pair(new_field, field_list);
+  }
+  if (t->field_names) {
+    Scheme_Object *new_name;
+    for (i = t->field_length -1; i >= 0; --i) {
+      new_name = scheme_make_utf8_string(t->field_names[i]);
+      field_names = scheme_make_pair(new_name, field_names);
+    }
   }
 
   new_ctype =
@@ -180,7 +195,8 @@ Scheme_Object *make_ctype_instance(c_type *t) {
         scheme_make_pair(is_restrict,
          scheme_make_pair(is_literal,
           scheme_make_pair(field_list,
-           scheme_null))))))));
+            scheme_make_pair(field_names,
+             scheme_null)))))))));
   return new_ctype;
 
 }

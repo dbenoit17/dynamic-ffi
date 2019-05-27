@@ -80,7 +80,7 @@ Parses headers for syntax tree data and builds dynamic ffi bindings.  The result
 as the first argument, and the C function parameters as the rest.  If the defined @racket[id]
 is called with no arguments, a hash-map of all symbols and ffi objects in the library is returned.
 
-The @racket[lib] argument can be a relative library created using @racket[dynamic-ffi-lib], or a hard-coded path omitting the object file extension.
+The lib argument can be a relative library created using @racket[dynamic-ffi-lib], or a hard-coded path omitting the object file extension.
 
 @racketblock[
 (require dynamic-ffi/unsafe)

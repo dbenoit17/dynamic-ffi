@@ -1,7 +1,8 @@
 #lang info
 (define collection "dynamic-ffi")
-(define deps '("base"))
-(define build-deps '("racket-doc" "rackunit-lib"))
+(define deps '("base" "rackunit-lib"))
+(define build-deps '("racket-doc" "rackunit-lib" "at-exp-lib"
+                     "scribble-lib"))
 (define scribblings '(("scribblings/dynamic-ffi.scrbl")))
 (define pkg-desc "")
 (define version "1.0")
@@ -11,4 +12,5 @@
   '("test/inline.rkt"
     "test/manual/generate.rkt"
     "test/libc.rkt"
+    "test/typedef-struct.rkt"
     "test/assembly.rkt"))

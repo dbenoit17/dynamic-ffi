@@ -179,6 +179,19 @@ c_type read_ctype(int *pipe_ready, int fdin, pthread_mutex_t *mutex, pthread_con
   for (i = 0; i < new_type.field_length; ++i) {
     new_type.fields[i] = read_ctype(pipe_ready, fdin, mutex, cond);
   }
+  /* (1) write field names */
+  if (new_type.field_names) {
+    new_type.field_names = (char**) malloc(sizeof(char**) * new_type.field_length);
+    for (i = 0; i < new_type.field_length; ++i) {
+      uint64_t string_length;
+      /* (1.1) read string length */
+      sync_read(pipe_ready, fdin, &string_length, sizeof(uint64_t), mutex,cond);
+      new_type.field_names[i] = (char*) malloc(sizeof(char*) * string_length);
+      /* (1.2) read string */
+      sync_read(pipe_ready, fdin, new_type.field_names[i], 
+                        sizeof(char*) * string_length, mutex,cond);
+    }
+  }
   return new_type;
 }
 
@@ -231,6 +244,18 @@ void write_ctype(int *pipe_ready, int fdout, c_type old_type, pthread_mutex_t *m
 
   for (i = 0; i < old_type.field_length; ++i) {
     write_ctype(pipe_ready, fdout, old_type.fields[i], mutex, cond);
+  }
+
+  /* (1) write field names */
+  if (old_type.field_names) {
+    for (i = 0; i < old_type.field_length; ++i) {
+      uint64_t string_length = strlen(old_type.field_names[i]);
+      /* (1.1) write string length */
+      sync_write(pipe_ready, fdout, &string_length, sizeof(uint64_t), mutex,cond);
+      /* (1.2) write string */
+      sync_write(pipe_ready, fdout, old_type.field_names[i], 
+                        sizeof(char*) * string_length, mutex,cond);
+    }
   }
 }
 

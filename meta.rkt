@@ -42,7 +42,7 @@
  (struct ctype-float ctype [] #:transparent)
  (struct ctype-pointer ctype [restrict? >pointee] #:transparent)
  (struct ctype-array ctype [element] #:transparent)
- (struct ctype-record ctype [members] #:transparent)
+ (struct ctype-record ctype [members member-names] #:transparent)
  (struct ctype-struct ctype-record [] #:transparent)
  (struct ctype-union ctype-record [] #:transparent)
  (struct ctype-function ctype [return params] #:transparent)
@@ -142,6 +142,8 @@
   (seventh ctype))
 (define (raw-ctype-fields ctype)
   (eighth ctype))
+(define (raw-ctype-field-names ctype)
+  (ninth ctype))
 (define (raw-ctype-pointee ctype)
   (car (raw-ctype-fields ctype)))
 (define (raw-ctype-function-ret ctype)
@@ -194,7 +196,8 @@
    (raw-ctype-volatile? t)
    (raw-ctype-literal? t)
    (raw-ctype-width t)
-   (map make-ctype (raw-ctype-fields t))))
+   (map make-ctype (raw-ctype-fields t))
+   (raw-ctype-field-names t)))
 
 (define (make-ctype-union t)
  (ctype-union
@@ -202,7 +205,8 @@
    (raw-ctype-volatile? t)
    (raw-ctype-literal? t)
    (raw-ctype-width t)
-   (map make-ctype (raw-ctype-fields t))))
+   (map make-ctype (raw-ctype-fields t))
+   (raw-ctype-field-names t)))
 
 (define (make-ctype-function t)
  (ctype-function

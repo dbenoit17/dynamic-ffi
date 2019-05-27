@@ -18,15 +18,21 @@ c_decl_array ffi_deep_parse(int argc, const char **argv) {
 }
 
 void c_type_free_fields(c_type *t) {
-  if (t->has_fields) {
+  unsigned int i;
+  unsigned int length = t->field_length;;
+  if (t->fields) {
     c_type *fields = t->fields;
-    unsigned int length = t->field_length;;
-    unsigned int i;
     for (i = 0; i < length; ++i) {
       c_type_free_fields(&(fields[i]));
     }
     free(fields);
   }
+/*  if (t->field_names) {
+    for (i = 0; i < length; ++i) {
+      free(t->field_names[i]);
+    }
+    free(t->field_names);
+  } */
 }
 
 void free_decl(c_decl d) {
@@ -126,9 +132,9 @@ c_type make_signed_int_c_type(uint64_t width, int is_const, int is_volatile) {
     t.is_restrict = 0;
     t.is_signed = 1;
     t.is_literal = 0;
-    t.has_fields = 0;
     t.field_length = 0;
     t.fields = NULL;
+    t.field_names = NULL;
     return t;
 }
 
@@ -141,9 +147,9 @@ c_type make_unsigned_int_c_type(uint64_t width, int is_const, int is_volatile) {
     t.is_restrict = 0;
     t.is_signed = 0;
     t.is_literal = 0;
-    t.has_fields = 0;
     t.field_length = 0;
     t.fields = NULL;
+    t.field_names = NULL;
     return t;
 }
 
@@ -156,9 +162,9 @@ c_type make_floating_c_type(uint64_t width, int is_const, int is_volatile) {
     t.is_restrict = 0;
     t.is_signed = 0;
     t.is_literal = 0;
-    t.has_fields = 0;
     t.field_length = 0;
     t.fields = NULL;
+    t.field_names = NULL;
     return t;
 }
 
@@ -171,9 +177,9 @@ c_type make_unknown_c_type(uint64_t width, int is_const, int is_volatile) {
     t.is_restrict = 0;
     t.is_signed = 0;
     t.is_literal = 0;
-    t.has_fields = 0;
     t.field_length = 0;
     t.fields = NULL;
+    t.field_names = NULL;
     return t;
 }
 
@@ -186,9 +192,9 @@ c_type make_void_c_type(uint64_t width, int is_const, int is_volatile) {
     t.is_restrict = 0;
     t.is_signed = 0;
     t.is_literal = 0;
-    t.has_fields = 0;
     t.field_length = 0;
     t.fields = NULL;
+    t.field_names = NULL;
     return t;
 }
 
@@ -196,7 +202,6 @@ c_type make_pointer_c_type(c_type type, int is_const, int is_volatile, int is_re
   c_type t;
   t.base = POINTER;
   t.fields = (c_type*) malloc(sizeof(c_type));
-  t.has_fields = 1;
   memcpy(t.fields, &type, sizeof(c_type));
   t.field_length = 1;
   t.is_signed = 0;
@@ -205,13 +210,13 @@ c_type make_pointer_c_type(c_type type, int is_const, int is_volatile, int is_re
   t.is_volatile = is_volatile;
   t.is_restrict = is_restrict;
   t.width = width;
+  t.field_names = NULL;
   return t;
 }
 c_type make_array_c_type(c_type type, int is_const, int is_volatile, int is_restrict, uint64_t width) {
   c_type t;
   t.base = ARRAY;
   t.fields = (c_type*) malloc(sizeof(c_type));
-  t.has_fields = 1;
   memcpy(t.fields, &type, sizeof(c_type));
   t.field_length = 1;
   t.is_signed = 0;
@@ -220,14 +225,15 @@ c_type make_array_c_type(c_type type, int is_const, int is_volatile, int is_rest
   t.is_volatile = is_volatile;
   t.is_restrict = is_restrict;
   t.width = width;
+  t.field_names = NULL;
   return t;
 }
 
-c_type make_struct_type(c_type* fields, int field_length, int is_const, int is_volatile, uint64_t width) {
+c_type make_struct_type(c_type* fields, char** field_names, int field_length, int is_const, int is_volatile, uint64_t width) {
   c_type t;
   t.base = STRUCT;
   t.fields = fields;
-  t.has_fields = 1;
+  t.field_names = field_names;
   t.field_length = field_length;
   t.is_signed = 0;
   t.is_literal = 0;
@@ -238,11 +244,11 @@ c_type make_struct_type(c_type* fields, int field_length, int is_const, int is_v
   return t;
 }
 
-c_type make_union_type(c_type* fields, int field_length, int is_const, int is_volatile, uint64_t width) {
+c_type make_union_type(c_type* fields, char** field_names, int field_length, int is_const, int is_volatile, uint64_t width) {
   c_type t;
   t.base = UNION;
   t.fields = fields;
-  t.has_fields = 1;
+  t.field_names = field_names;
   t.field_length = field_length;
   t.is_signed = 0;
   t.is_literal = 0;
@@ -257,7 +263,6 @@ c_type make_function_type(c_type* fields, int field_length) {
   c_type t;
   t.base = FUNCTION;
   t.fields = fields;
-  t.has_fields = 1;
   t.field_length = field_length;
   t.is_signed = 0;
   t.is_literal = 0;
@@ -265,6 +270,7 @@ c_type make_function_type(c_type* fields, int field_length) {
   t.is_volatile = 0;
   t.is_restrict = 0;
   t.width = 0;
+  t.field_names = NULL;
   return t;
 }
 

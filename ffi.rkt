@@ -56,7 +56,7 @@
 
 (define (make-ffi-array ct-array)
   (define element (dffi:ctype-array-element ct-array))
-  (make-array-type (make-dffi-obj element)
+  (_array (make-dffi-obj element)
     (quotient (dffi:ctype-width ct-array)
               (dffi:ctype-width element))))
 
@@ -65,14 +65,14 @@
     (for/list ([mem (dffi:ctype-record-members ct-struct)])
       (make-dffi-obj mem)))
   (if (null? struct-members) #f
-  (make-cstruct-type struct-members)))
+  (apply _list-struct struct-members)))
 
 (define (make-ffi-union ct-union)
   (define union-members
     (for/list ([mem (dffi:ctype-record-members ct-union)])
       (make-dffi-obj mem)))
   (if (null? union-members) #f
-    (apply make-union-type union-members)))
+    (apply _union union-members)))
 
 (define (make-ffi-function ct-function)
   (define params

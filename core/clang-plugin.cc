@@ -258,17 +258,23 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
     for (auto i = rd->field_begin(); i != rd->field_end(); i++, field_length++);
 
     c_type* fields = (c_type*) malloc(sizeof(c_type) * field_length);
+    char** field_names = (char**) malloc(sizeof(char*) * field_length);
     for (auto i = rd->field_begin(); i != rd->field_end(); i++) {
       QualType field_type = i->getType();
       uint64_t field_width = rd->getASTContext().getTypeInfo(field_type).Width;
       fields[i->getFieldIndex()] = dispatch_on_type(field_type, rd);
+      fields[i->getFieldIndex()] = dispatch_on_type(field_type, rd);
+      std::string cxx_name = i->getNameAsString();
+      
+      field_names[i->getFieldIndex()] = (char*) malloc(sizeof(char*) * cxx_name.length());
+      strcpy(field_names[i->getFieldIndex()], cxx_name.c_str());
       width += field_width;
     }
     if (type->isStructureType()) {
-      ctype = make_struct_type(fields, field_length, 0, 0, width);
+      ctype = make_struct_type(fields, field_names, field_length, 0, 0, width);
     }
     else if (type->isUnionType()) {
-      ctype = make_union_type(fields, field_length, 0, 0, width);
+      ctype = make_union_type(fields, field_names, field_length, 0, 0, width);
     }
     else {
       fprintf(stderr, "record type error");

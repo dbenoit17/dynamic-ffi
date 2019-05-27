@@ -51,6 +51,7 @@ typedef struct c_type {
   int has_fields;
   unsigned int field_length;
   struct c_type *fields;
+  char **field_names;
 } c_type;
 
 typedef struct {
@@ -86,11 +87,15 @@ c_type make_array_c_type(c_type type, int is_const, int is_volatile,
                          int is_restrict, uint64_t width);
 c_type make_pointer_c_type(c_type type, int is_const, int is_volatile,
                            int is_restrict, uint64_t width);
-c_type make_struct_type(c_type* fields, int field_length, int is_const,
+
+c_type make_struct_type(c_type* fields, char** field_names, 
+                        int field_length, int is_const,
                         int is_volatile, uint64_t width);
-c_type make_union_type(c_type* fields, int field_length, int is_const,
+c_type make_union_type(c_type* fields, char** field_names, 
+                        int field_length, int is_const,
                         int is_volatile, uint64_t width);
 c_type make_function_type(c_type* fields, int field_length);
+
 c_type make_void_c_type(uint64_t width, int is_const, int is_volatile);
 
 void free_decl_array(c_decl_array a);

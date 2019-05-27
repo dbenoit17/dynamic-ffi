@@ -26,6 +26,11 @@
     [timestamp<=? 
      (-> (or/c string? path?) (or/c string? path?) any)]))
 
+(module ffi-lib racket/base
+  (require ffi/unsafe)
+  (provide ffi-lib))
+(require 'ffi-lib)
+
 (define-runtime-path ffi-cache-path
   (build-path "compiled" "ffi-cache"))
 
@@ -73,10 +78,10 @@
 (define (lib-equal? ffi-name cached-file-path lib)
   (define cached-lib
     (dynamic-require cached-file-path
-      (string->symbol (format "~a-library" ffi-name))
+      (string->symbol (format "~a-ffi-lib" ffi-name))
       (λ () #f)))
-  (define result (equal? lib cached-lib))
-  (debug-msg (format "lib-equal? ~a\n" result))
+  (define result (equal? (ffi-lib lib) cached-lib))
+  (debug-msg (format "lib-equal? ~a = ~a : ~a\n" lib cached-lib result))
   result)
 
 (define (timestamps-valid? ffi-name cached-file-path lib headers)
