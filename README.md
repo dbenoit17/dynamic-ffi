@@ -46,9 +46,7 @@ sudo apt-get install 'build-essential" racket llvm-dev libclang-dev clang
 ```
 
 ## Documentaion
-Documentation is rendered when the package is built.  After
-installing the package, use Racket's command line tool `raco`
-to view the html docs.
+Documentation is available at https://docs.racket-lang.org/dynamic-ffi/index.html, or locally after the package is installed by running the following command:
 
 ```
 raco docs dynamic-ffi
