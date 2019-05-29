@@ -171,6 +171,5 @@ find at project issue tracker at https://github.com/dbenoit17/dynamic-ffi.
 As a workaround in almost every case, @racket[define-inline-ffi] can be used to write
 a wrapper around functions that @racket[dynamic-ffi] is unable to parse.
 
-
-
-
+@section{Acknowledgements}
+Special thanks to Jay McCarthy for suggesting this project idea, and for his advisorship during its implementation.
