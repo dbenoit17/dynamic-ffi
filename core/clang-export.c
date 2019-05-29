@@ -27,12 +27,12 @@ void c_type_free_fields(c_type *t) {
     }
     free(fields);
   }
-/*  if (t->field_names) {
+  if (t->field_names) {
     for (i = 0; i < length; ++i) {
       free(t->field_names[i]);
     }
     free(t->field_names);
-  } */
+  }
 }
 
 void free_decl(c_decl d) {
