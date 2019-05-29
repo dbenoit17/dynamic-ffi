@@ -29,7 +29,7 @@ Finally:
 ## Installation
 To install the package:
 ```
-raco pkg install https://github.com/dbenoit17/dynamic-ffi.git
+raco pkg install dynamic-ffi
 ```
 
 ### Dependencies:
