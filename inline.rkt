@@ -1,7 +1,6 @@
 ;; This module provides a macro for defining
 ;; inline FFIs.
 
-
 #lang racket/base
 
 (require openssl/sha1

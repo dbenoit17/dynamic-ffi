@@ -10,15 +10,18 @@
 @defmodule[dynamic-ffi/unsafe]{
   This module produces automatic ABI-native ffi bindings to C libraries.
 
-  Dynamic FFI is a native Racket extension which embeds clang/llvm to parse out declarations
-  from C headers and dynamically build ffi objects with correct type/size information.
-  This library is currently only availalable for GNU/Linux, but should be easily portable to
-  other operating systems.  If you are experienced with building clang/llvm plugins on other
-  OSes and would like to contribute, please contact the author.
+  Dynamic FFI is a native Racket extension which embeds clang/llvm to
+  parse out declarations
+  from C headers and dynamically build ffi objects with correct type/size
+  information. This library is currently only availalable for GNU/Linux,
+  but should be easily portable to other operating systems.  If you are
+  experienced with building clang/llvm plugins on other OSes and would
+  like to contribute, please contact the author.
 
 
-  This module uses native extensions to Racket' C runtime, and is not currently
-  compatible with Racket-on-Chez.  Support for Racket-on-Chez is planned for the future.
+  This module uses native extensions to Racket' C runtime, and is not
+  currently compatible with Racket-on-Chez.  Support for Racket-on-Chez
+  is planned for the future.
 }
 
 @section{Warning: Read this Section Before Use}
@@ -39,7 +42,8 @@
 
   Finally:
 
-  @bold{Passing unsanitized user-input to any function in this library is horribly dangerous.  You should never do it under any circumstance.}
+  @bold{Passing unsanitized user-input to any function in this library
+        is horribly dangerous.  You should never do it under any circumstance.}
 
 @section{Dependencies}
 
@@ -75,12 +79,14 @@ command:
          #:contracts ([id identifier?]
                       [lib (or/c string? path?)]
                       [header (or/c string? path?)])]
-Parses headers for syntax tree data and builds dynamic ffi bindings.  The resulting
-@racket[id] will be bound to a case-lambda function which takes the name of the C function
-as the first argument, and the C function parameters as the rest.  If the defined @racket[id]
-is called with no arguments, a hash-map of all symbols and ffi objects in the library is returned.
+  Parses headers for syntax tree data and builds dynamic ffi bindings.
+  The resulting @racket[id] will be bound to a case-lambda function which
+  takes the name of the C function as the first argument, and the C function
+  parameters as the rest.  If the defined @racket[id] is called with no
+  arguments, a hash-map of all symbols and ffi objects in the library is returned.
 
-The lib argument can be a relative library created using @racket[dynamic-ffi-lib], or a hard-coded path omitting the object file extension.
+  The lib argument can be a relative library created using @racket[dynamic-ffi-lib],
+  or a hard-coded path omitting the object file extension.
 
 @racketblock[
 (require dynamic-ffi/unsafe)
@@ -95,29 +101,30 @@ The lib argument can be a relative library created using @racket[dynamic-ffi-lib
                           [version string?] ...)
                           (cons/c (or/c string? path?)
                                   (listof string?))]
-Takes a library base name and shared object versions, and produces
-a list argument which can be used in place of a hard-coded system object file path.
-In the above @racket[define-dynamic-ffi] example, Racket will search for @racket[libc.so.6]
-in the default system library paths.
+  Takes a library base name and shared object versions, and produces
+  a list argument which can be used in place of a hard-coded system
+  object file path.  In the above @racket[define-dynamic-ffi] example,
+  Racket will search for @racket[libc.so.6] in the default system library paths.
 
 @defform[(define-dynamic-ffi/cached id lib header ...)
          #:contracts ([id identifier?]
                       [lib (or/c string? path?)]
                       [header (or/c string? path?)])]
-This form behaves the same way as @racket[define-dynamic-ffi], except it caches
-static ffi bindings so that they do not need to be recomputed in future program executions.
+  This form behaves the same way as @racket[define-dynamic-ffi],
+  except it caches static ffi bindings so that they do not need
+  to be recomputed in future program executions.
 
 @section{Generating Static FFIs}
-This library has the ability to generate static ffi files that can be used
-without the dependency on @racket[dynamic-ffi].
+  This library has the ability to generate static ffi files that can be used
+  without the dependency on @racket[dynamic-ffi].
 
 @defproc[(generate-static-ffi [ffi-name (or/c string? symbol?)]
                               [file (or/c string? path?)]
                               [lib-path (or/c string? path?)]
                               [headers (or/c string? path?)] ...)
                               (void)]
-Generates a static ffi where identifiers corresponding to C function names
-are prefixed with @racket[ffi-name] and bound to their associated ffi objects.
+  Generates a static ffi where identifiers corresponding to C function names
+  are prefixed with @racket[ffi-name] and bound to their associated ffi objects.
 
 @defproc[(generate-mapped-static-ffi [ffi-name (or/c string? symbol?)]
                                    [file (or/c string? path?)]
@@ -129,7 +136,7 @@ produced by @racket[define-dynamic-ffi].
 
 @section{Inline FFIs}
 This library allows users to write C functions inline, which will be compiled
-at runtime and provided as a dynamic FFI.
+at runtime and provided as a dynamic ffi.
 
 @defform[(define-inline-ffi name code ... [#:compiler compiler]
                                           [#:compile-flags flags])
@@ -138,7 +145,9 @@ at runtime and provided as a dynamic FFI.
                       [compiler string?]
                       [flags (or/c string? 'auto)])]
 
-Define ffi bindings by writing inline C code.  This form is designed for use with the at-reader.  For security reasons @racket[define-dynamic-ffi] only accepts C code as string literals.
+  Define ffi bindings by writing inline C code.  This form is designed for use
+  with the at-reader.  For security reasons @racket[define-dynamic-ffi] only
+  accepts C code as string literals.
 
 @racketblock[
 (define-inline-ffi mylib
@@ -148,8 +157,8 @@ Define ffi bindings by writing inline C code.  This form is designed for use wit
 
 (mylib 'add 3 4)]
 
-Extra compile flags can be passed to @racket[define-inline-ffi], and the
-default compiler can be overridden.
+  Extra compile flags can be passed to @racket[define-inline-ffi], and the
+  default compiler can be overridden.
 
 @racketblock[
 (define-inline-ffi libm #:compile-flags "-lm" #:compiler "clang"
@@ -160,16 +169,17 @@ default compiler can be overridden.
 (libm 'square_root 16)]
 
 @section{Limitations}
-This library is able to generate dynamic ffi bindings for a fairly
-large portion of the C language standard.  Occasionally we find
-special declaration types that clang treats differently, which
-the library may not have support for yet.  When such declarations are
-encountered, @racket[dynamic-ffi] will emit error messages with
-details about the missing functionality.  Please report any issues you
-find at project issue tracker at https://github.com/dbenoit17/dynamic-ffi.
+  This library is able to generate dynamic ffi bindings for a fairly
+  large portion of the C language standard.  Occasionally we find
+  special declaration types that clang treats differently, which
+  the library may not have support for yet.  When such declarations are
+  encountered, @racket[dynamic-ffi] will emit error messages with
+  details about the missing functionality.  Please report any issues you
+  find at project issue tracker at https://github.com/dbenoit17/dynamic-ffi.
 
-As a workaround in almost every case, @racket[define-inline-ffi] can be used to write
-a wrapper around functions that @racket[dynamic-ffi] is unable to parse.
+  As a workaround in almost every case, @racket[define-inline-ffi] can be used to write
+  a wrapper around functions that @racket[dynamic-ffi] is unable to parse.
 
 @section{Acknowledgements}
-Special thanks to Jay McCarthy for suggesting this project idea, and for his advisorship during its implementation.
+  Special thanks to Jay McCarthy for suggesting this project idea,
+  and for his advisorship during its implementation.
