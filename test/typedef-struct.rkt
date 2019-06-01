@@ -2,9 +2,9 @@
 
 (require "../unsafe.rkt")
 
-(provide all-defined-out)
-
 @define-inline-ffi[struct-test]{
+  #include <stdlib.h>
+  #include <stdio.h>
   #include <stdint.h>
   typedef struct {
     char *name;
@@ -16,20 +16,23 @@
 
   number add(number a, number b) {
     number c;
-    c. value = a.value + b.value;
+    c.value = a.value + b.value;
+    if (c.value >12)  {
+      fprintf(stderr, "error: this example can only count to twelve...\n");
+      exit(1);
+    }
     c.name = names[c.value];
     return c;
  }
-
-  enum test_enum {
-    ONE,
-    TWO
-  };
 }
 
 ;; demonstrate using _list-structs
 
 (define n2 (list "two" 2))
 
-(struct-test 'add n2 n2)
+(define n7 (list "seven" 7))
+
+(printf "add(n2, n2): ~a\n" (struct-test 'add n2 n2))
+(printf "add(n7, n7): ~a\n" (struct-test 'add n7 n7))
+
 
