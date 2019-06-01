@@ -1,6 +1,8 @@
 #lang at-exp racket/base
 
-(require dynamic-ffi/unsafe)
+(require "../unsafe.rkt")
+
+(provide all-defined-out)
 
 @define-inline-ffi[struct-test]{
   #include <stdint.h>
@@ -11,7 +13,7 @@
 
   char* names[] = {"zero", "one", "two", "three", "four", "five", "six"
                  "seven", "eight", "nine", "ten", "eleven", "twelve"};
-  
+
   number add(number a, number b) {
     number c;
     c. value = a.value + b.value;

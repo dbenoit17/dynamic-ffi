@@ -138,7 +138,7 @@ at runtime and provided as a dynamic FFI.
                       [compiler string?]
                       [flags (or/c string? 'auto)])]
 
-Define ffi bindings by writing inline C code.  This form is designed for use with the at-reader.
+Define ffi bindings by writing inline C code.  This form is designed for use with the at-reader.  For security reasons @racket[define-dynamic-ffi] only accepts C code as string literals.
 
 @racketblock[
 (define-inline-ffi mylib

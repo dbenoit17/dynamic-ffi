@@ -12,8 +12,8 @@ reinstall:
 
 
 clean:
-	rm -rf compiled/native
-	rm -rf private/native
+	rm -rf compiled
+	rm -rf test/compiled
 
 clean-cache:
 	rm -rf compiled/ffi-cache
