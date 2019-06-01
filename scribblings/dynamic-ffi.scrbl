@@ -19,7 +19,7 @@
   like to contribute, please contact the author.
 
 
-  This module uses native extensions to Racket' C runtime, and is not
+  This module uses native extensions to Racket's C runtime, and is not
   currently compatible with Racket-on-Chez.  Support for Racket-on-Chez
   is planned for the future.
 }
@@ -175,7 +175,8 @@ at runtime and provided as a dynamic ffi.
   the library may not have support for yet.  When such declarations are
   encountered, @racket[dynamic-ffi] will emit error messages with
   details about the missing functionality.  Please report any issues you
-  find at project issue tracker at https://github.com/dbenoit17/dynamic-ffi.
+  find at
+  @hyperlink["https://github.com/dbenoit17/dynamic-ffi"]{the project issue tracker}.
 
   As a workaround in almost every case, @racket[define-inline-ffi] can be used to write
   a wrapper around functions that @racket[dynamic-ffi] is unable to parse.
