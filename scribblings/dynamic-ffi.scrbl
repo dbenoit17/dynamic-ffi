@@ -182,4 +182,4 @@ at runtime and provided as a dynamic ffi.
 
 @section{Acknowledgements}
   Special thanks to Jay McCarthy for suggesting this project idea,
-  and for his advisorship during its implementation.
+  and for his advisership during its implementation.
