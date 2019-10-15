@@ -95,7 +95,7 @@ command:
   (dynamic-ffi-lib "libc" "6")
   "/usr/include/stdio.h")
 
-(libc 'printf "hello world")]
+(libc 'printf "hello world\n")]
 
 @defproc[(dynamic-ffi-lib [lib (or/c string? path?)]
                           [version string?] ...)

@@ -1,14 +1,19 @@
 /* This is where we extract AST info from clang.
    `dynamic_ffi_parse` is the main driver function.
 
-   The plugin derives from a syntax tree node visitor 
+   The plugin derives from a syntax tree node visitor
    class, visits each C declaration in the header,
    and builds an ffi metadata struct for each.
 
-   It works like a pretty normal AST traverse, 
+   It works like a pretty normal AST traverse,
    eg. visit relevant nodes and return
    recursive transformations based on the node
-   types. */
+   types.
+
+   The reason we export C structs from clang is to provide
+   an interface which can be easily bound to languages other
+   than racket going forward (such as python) via builtin FFIs.
+   */
 
 #include <string>
 #include <vector>
@@ -125,7 +130,7 @@ bool ffi::ffiASTConsumer::HandleTopLevelDecl(DeclGroupRef decls) {
         accumulator.push_decl(d);
       }
       else if (const TypedefDecl  *typedef_decl = dyn_cast<TypedefDecl>((Decl*) *i)) {
-        
+
         c_decl d = make_decl_from_typedef(typedef_decl);
         accumulator.push_decl(d);
       }
@@ -141,7 +146,7 @@ bool ffi::ffiASTConsumer::HandleTopLevelDecl(DeclGroupRef decls) {
 
 /* Check we care about a declaration.  Eg. does the
    declaration come from a header that was passed via
-   argv. 
+   argv.
 
    This is important because otherwise clang will spit
    back declarations from nested #includes which:
@@ -265,7 +270,7 @@ c_type ffi::ffiASTConsumer::dispatch_on_type(QualType qual_type, const Decl *d) 
       fields[i->getFieldIndex()] = dispatch_on_type(field_type, rd);
       fields[i->getFieldIndex()] = dispatch_on_type(field_type, rd);
       std::string cxx_name = i->getNameAsString();
-      
+
       field_names[i->getFieldIndex()] = (char*) malloc(sizeof(char*) * cxx_name.length());
       strcpy(field_names[i->getFieldIndex()], cxx_name.c_str());
       width += field_width;

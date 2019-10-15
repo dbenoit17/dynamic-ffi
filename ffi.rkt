@@ -96,8 +96,7 @@
   [(dffi:ctype-union? ct) (make-ffi-union ct)]
   [(dffi:ctype-array? ct) (make-ffi-array ct)]
   [(dffi:ctype-function? ct) (make-ffi-function ct)]
-  [(dffi:ctype-void? ct)
-   (error "void only allowed as pointer or function return")]
+  [(dffi:ctype-void? ct) _void]
   [else (error "unimplemented type")]))
 
 ;; This should probably return a custom type
