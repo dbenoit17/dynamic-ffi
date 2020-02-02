@@ -63,7 +63,7 @@ To install a clang toolchain on Ubuntu:
 sudo apt-get install "build-essential" racket llvm-dev libclang-dev clang
 }
 
-To install a clang toolchain on macOS (assuming that @hyperlink["https://brew.sh/"]{Homebrew} is installed), run @code{brew install llvm}, then follow the instructions to setup paths emitted by Homebrew.
+To install a clang toolchain on macOS (assuming that @hyperlink["https://brew.sh/"]{Homebrew} is installed), run @code{brew install llvm}, then follow the instructions emitted by Homebrew to setup paths.
 
 
 During the raco package install, Dynamic FFI will compile itself and link
