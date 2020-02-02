@@ -25,7 +25,9 @@
   (build-path ffi-cache-path (format "~a.~a.rkt.c" key ffi-digest)))
 
 (define (get-cached-c-obj-path c-code [key 'ffiobj])
-  (format "~a.so" (get-cached-c-source-path c-code key)))
+  (format "~a~a"
+          (get-cached-c-source-path c-code key)
+          (system-type 'so-suffix)))
 
 (define (cache-inline-c c-code [key 'ffiobj])
   (with-output-to-file (get-cached-c-source-path c-code key)

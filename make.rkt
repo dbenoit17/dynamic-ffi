@@ -73,7 +73,9 @@
     (printf "~a\n" (build-path llvm-include-dir h))))
 
 (define (libclang-exists?)
-  (system "ldconfig -p | grep -q libclang"))
+  (case (system-type)
+    [(macosx) #t]
+    [else (system "ldconfig -p | grep -q libclang")]))
 
 (define (clang++-exists?)
   (find-executable-path "clang++"))
