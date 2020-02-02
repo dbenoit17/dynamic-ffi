@@ -13,7 +13,7 @@
 (define (warn-undefined-symbol sym)
   (lambda ()
     (fprintf (current-error-port)
-      "warning: ~a does not contain symbol ~~a" sym)))
+      "warning: ~a does not contain symbol ~~a\n" sym)))
 
 (define ffi-obj-map
  ~a)
