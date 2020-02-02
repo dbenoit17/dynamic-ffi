@@ -5,15 +5,16 @@
 @author[(author+email "David Benoit" "dbenoit@fedoraproject.org")]
 
 @require[@for-label[dynamic-ffi/unsafe
-                    racket/base]]
+                    racket/base
+                    racket/contract]]
 
 @defmodule[dynamic-ffi/unsafe]{
-  This module produces automatic ABI-native ffi bindings to C libraries.
+  This module produces automatic ABI-native FFI bindings to C libraries.
 
   Dynamic FFI is a native Racket extension which embeds clang/llvm to
   parse out declarations
-  from C headers and dynamically build ffi objects with correct type/size
-  information. This library is currently only availalable for GNU/Linux,
+  from C headers and dynamically build FFI objects with correct type/size
+  information. This library is currently only available for GNU/Linux and macOS,
   but should be easily portable to other operating systems.  If you are
   experienced with building clang/llvm plugins on other OSes and would
   like to contribute, please contact the author.
@@ -27,11 +28,11 @@
 @section{Warning: Read this Section Before Use}
   Like Racket's built-in @racket[ffi/unsafe] module, this library allows Racket to
   use C functions and data structures that are not memory-managed by Racket.
-  Racket can not provide safety guarantees by default for ffi objects created
+  Racket cannot provide safety guarantees by default for FFI objects created
   using this library.  Users of this library will be required to self-enforce
-  memory management in C and/or manually expose ffi objects to Racket's garbage
+  memory management in C and/or manually expose FFI objects to Racket's garbage
   collector.  Extra care should be taken to ensure that C functions bound via
-  this library or Racket's built-in ffi do not contain errors like buffer overflows,
+  this library or Racket's built-in FFI do not contain errors like buffer overflows,
   which could corrupt the runtime, cause undefined behavior, and prevent Racket from
   providing useful error messages.
 
@@ -53,14 +54,22 @@ This library does not bundle clang or llvm.
 
 To install a clang toolchain on Fedora:
 
-@racketblock[
+@codeblock[
 sudo dnf install "@development tools" racket llvm-devel clang-devel
 ]
 
 To install a clang toolchain on Ubuntu:
-@racketblock[
+@codeblock[
 sudo apt-get install "build-essential" racket llvm-dev libclang-dev clang
 ]
+
+To install a clang toolchain on macOS (assuming that @hyperlink["https://brew.sh/"]{Homebrew} is installed):
+
+@codeblock[
+brew install llvm
+# then follow the instructions to setup paths emitted by Homebrew
+]
+
 
 During the raco package install, Dynamic FFI will compile itself and link
 with the system clang libraries.  Dependencies should be installed before
@@ -69,7 +78,7 @@ complain about missing dependencies when you try to use it.  To finish the
 installation process, install the required dependencies and run the following
 command:
 
-@racketblock[raco setup -p dynamic-ffi]
+@racketblock[raco setup -p -D dynamic-ffi]
 
 @section{Defining FFIs}
 
@@ -79,11 +88,11 @@ command:
          #:contracts ([id identifier?]
                       [lib (or/c string? path?)]
                       [header (or/c string? path?)])]
-  Parses headers for syntax tree data and builds dynamic ffi bindings.
+  Parses headers for syntax tree data and builds dynamic FFI bindings.
   The resulting @racket[id] will be bound to a case-lambda function which
   takes the name of the C function as the first argument, and the C function
   parameters as the rest.  If the defined @racket[id] is called with no
-  arguments, a hash-map of all symbols and ffi objects in the library is returned.
+  arguments, a hash-map of all symbols and FFI objects in the library is returned.
 
   The lib argument can be a relative library created using @racket[dynamic-ffi-lib],
   or a hard-coded path omitting the object file extension.
@@ -104,39 +113,41 @@ command:
   Takes a library base name and shared object versions, and produces
   a list argument which can be used in place of a hard-coded system
   object file path.  In the above @racket[define-dynamic-ffi] example,
-  Racket will search for @racket[libc.so.6] in the default system library paths.
+  Racket will search for @code[libc.so.6] in the default system library paths.
 
 @defform[(define-dynamic-ffi/cached id lib header ...)
          #:contracts ([id identifier?]
                       [lib (or/c string? path?)]
                       [header (or/c string? path?)])]
   This form behaves the same way as @racket[define-dynamic-ffi],
-  except it caches static ffi bindings so that they do not need
+  except it caches static FFI bindings so that they do not need
   to be recomputed in future program executions.
 
 @section{Generating Static FFIs}
-  This library has the ability to generate static ffi files that can be used
+  This library has the ability to generate static FFI files that can be used
   without the dependency on @racket[dynamic-ffi].
 
-@defproc[(generate-static-ffi [ffi-name (or/c string? symbol?)]
-                              [file (or/c string? path?)]
-                              [lib-path (or/c string? path?)]
-                              [headers (or/c string? path?)] ...)
-                              (void)]
-  Generates a static ffi where identifiers corresponding to C function names
-  are prefixed with @racket[ffi-name] and bound to their associated ffi objects.
+@defproc[(generate-static-ffi
+          [ffi-name (or/c string? symbol?)]
+          [file (or/c string? path?)]
+          [lib-path (or/c string? path? (cons/c (or/c string? path?) (listof string?)))]
+          [headers (or/c string? path?)] ...)
+          (void)]
+  Generates a static FFI where identifiers corresponding to C function names
+  are prefixed with @racket[ffi-name] and bound to their associated FFI objects.
 
-@defproc[(generate-mapped-static-ffi [ffi-name (or/c string? symbol?)]
-                                   [file (or/c string? path?)]
-                                   [lib-path (or/c string? path?)]
-                                   [headers (or/c string? path?)] ...)
-                                   (void)]
-Generates a static ffi whose interface is equivalent to the case-lambda function
+@defproc[(generate-mapped-static-ffi
+          [ffi-name (or/c string? symbol?)]
+          [file (or/c string? path?)]
+          [lib-path (or/c string? path? (cons/c (or/c string? path?) (listof string?)))]
+          [headers (or/c string? path?)] ...)
+          (void)]
+Generates a static FFI whose interface is equivalent to the case-lambda function
 produced by @racket[define-dynamic-ffi].
 
 @section{Inline FFIs}
 This library allows users to write C functions inline, which will be compiled
-at runtime and provided as a dynamic ffi.
+at runtime and provided as a dynamic FFI.
 
 @defform[(define-inline-ffi name code ... [#:compiler compiler]
                                           [#:compile-flags flags])
@@ -145,7 +156,7 @@ at runtime and provided as a dynamic ffi.
                       [compiler string?]
                       [flags (or/c string? 'auto)])]
 
-  Define ffi bindings by writing inline C code.  This form is designed for use
+  Define FFI bindings by writing inline C code.  This form is designed for use
   with the at-reader.  For security reasons @racket[define-dynamic-ffi] only
   accepts C code as string literals.
 
@@ -169,7 +180,7 @@ at runtime and provided as a dynamic ffi.
 (libm 'square_root 16)]
 
 @section{Limitations}
-  This library is able to generate dynamic ffi bindings for a fairly
+  This library is able to generate dynamic FFI bindings for a fairly
   large portion of the C language standard.  Occasionally we find
   special declaration types that clang treats differently, which
   the library may not have support for yet.  When such declarations are
