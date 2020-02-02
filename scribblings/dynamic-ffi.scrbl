@@ -54,21 +54,16 @@ This library does not bundle clang or llvm.
 
 To install a clang toolchain on Fedora:
 
-@codeblock[
-sudo dnf install "@development tools" racket llvm-devel clang-devel
-]
+@codeblock{
+sudo dnf install "@"@"development tools" racket llvm-devel clang-devel
+}
 
 To install a clang toolchain on Ubuntu:
-@codeblock[
+@codeblock{
 sudo apt-get install "build-essential" racket llvm-dev libclang-dev clang
-]
+}
 
-To install a clang toolchain on macOS (assuming that @hyperlink["https://brew.sh/"]{Homebrew} is installed):
-
-@codeblock[
-brew install llvm
-# then follow the instructions to setup paths emitted by Homebrew
-]
+To install a clang toolchain on macOS (assuming that @hyperlink["https://brew.sh/"]{Homebrew} is installed), run @code{brew install llvm}, then follow the instructions to setup paths emitted by Homebrew.
 
 
 During the raco package install, Dynamic FFI will compile itself and link
@@ -113,7 +108,7 @@ command:
   Takes a library base name and shared object versions, and produces
   a list argument which can be used in place of a hard-coded system
   object file path.  In the above @racket[define-dynamic-ffi] example,
-  Racket will search for @code[libc.so.6] in the default system library paths.
+  Racket will search for @code{libc.so.6} in the default system library paths.
 
 @defform[(define-dynamic-ffi/cached id lib header ...)
          #:contracts ([id identifier?]
