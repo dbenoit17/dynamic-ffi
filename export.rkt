@@ -125,8 +125,6 @@
    (error "void only allowed as pointer or function return")]
   [else (error "unimplemented type")]))
 
-(define missing-symbol (gensym))
-
 ;; This is equivalent to build-ffi-obj-map in ffi.rkt,
 ;; except it produces racket source code instead
 ;; of runtime ffi objects.
@@ -144,12 +142,9 @@
               [(or (dffi:function-decl? decl)
                    (dffi:var-decl? decl))
                (and
-                ;; NOTE: use _byte as a dummy type
-                (not (eq? missing-symbol
-                          (get-ffi-obj (string->symbol name)
-                                       ffi-lib-obj
-                                       _byte
-                                       (λ () missing-symbol))))
+                ;; NOTE: use _byte as a dummy type which will return a Racket integer
+                ;; when the symbol exists, #f otherwise
+                (get-ffi-obj (string->symbol name) ffi-lib-obj _byte (λ () #f))
                 (format "(get-ffi-obj '~a ~a\n    ~a \n    (warn-undefined-symbol '~a))"
                         name lib (format-dffi-obj type) name))]
               [else
