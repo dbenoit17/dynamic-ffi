@@ -141,12 +141,15 @@
                (format-dffi-obj type)]
               [(or (dffi:function-decl? decl)
                    (dffi:var-decl? decl))
-               (and
-                ;; NOTE: use _byte as a dummy type which will return a Racket integer
-                ;; when the symbol exists, #f otherwise
-                (get-ffi-obj (string->symbol name) ffi-lib-obj _byte (λ () #f))
-                (format "(get-ffi-obj '~a ~a\n    ~a \n    (warn-undefined-symbol '~a))"
-                        name lib (format-dffi-obj type) name))]
+               (cond
+                 [(get-ffi-obj (string->symbol name) ffi-lib-obj _byte (λ () #f))
+                  ;; NOTE: use _byte as a dummy type which will return a Racket integer
+                  ;; when the symbol exists, #f otherwise
+                  (format "(get-ffi-obj '~a ~a\n    ~a \n    (warn-undefined-symbol '~a))"
+                          name lib (format-dffi-obj type) name)]
+                 [else
+                  (fprintf (current-error-port) "warning: ~a is undefined\n" name)
+                  #f])]
               [else
                (fprintf (current-error-port)
                         "warning: unimplemented delcaration type: ~a\n"

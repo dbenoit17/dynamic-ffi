@@ -129,11 +129,16 @@
               [(or (dffi:function-decl? decl) 
                    (dffi:var-decl? decl))
                (get-ffi-obj name ffi-library (make-dffi-obj type)
-                 (λ () 
-                   (printf "warning: ~a does not contain declared symbol ~a\n" 
-                    lib name) #f))]
+                 (λ ()
+                   (fprintf (current-error-port)
+                            "warning: ~a does not contain declared symbol ~a\n"
+                            lib name)
+                   #f))]
               [else
-                 (printf "warning: unimplemented delcaration type: ~a\n" decl)]))
+               (fprintf (current-error-port)
+                        "warning: unimplemented delcaration type: ~a\n"
+                        decl)
+               #f]))
       (cons (string->symbol name) ffi-obj)))
   (make-hash
     (filter (λ (x) (cdr x)) pairs)))
