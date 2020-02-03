@@ -7,3 +7,5 @@ compiled/
 *.swp
 llvm
 build
+/private
+/core/dynamic-ffi.3m.c
