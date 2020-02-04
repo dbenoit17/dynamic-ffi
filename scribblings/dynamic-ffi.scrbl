@@ -80,8 +80,7 @@ command:
 
 
 @defform[(define-dynamic-ffi id lib header ...)
-         #:contracts ([id identifier?]
-                      [lib (or/c string? path?)]
+         #:contracts ([lib (or/c string? path?)]
                       [header (or/c string? path?)])]
   Parses headers for syntax tree data and builds dynamic FFI bindings.
   The resulting @racket[id] will be bound to a case-lambda function which
@@ -111,8 +110,7 @@ command:
   Racket will search for @code{libc.so.6} in the default system library paths.
 
 @defform[(define-dynamic-ffi/cached id lib header ...)
-         #:contracts ([id identifier?]
-                      [lib (or/c string? path?)]
+         #:contracts ([lib (or/c string? path?)]
                       [header (or/c string? path?)])]
   This form behaves the same way as @racket[define-dynamic-ffi],
   except it caches static FFI bindings so that they do not need
@@ -146,8 +144,7 @@ at runtime and provided as a dynamic FFI.
 
 @defform[(define-inline-ffi name code ... [#:compiler compiler]
                                           [#:compile-flags flags])
-         #:contracts ([name identifier?]
-                      [code string?]
+         #:contracts ([code string?]
                       [compiler string?]
                       [flags (or/c string? 'auto)])]
 
