@@ -148,12 +148,10 @@
                   (format "(get-ffi-obj '~a ~a\n    ~a \n    (warn-undefined-symbol '~a))"
                           name lib (format-dffi-obj type) name)]
                  [else
-                  (fprintf (current-error-port) "warning: ~a is undefined\n" name)
+                  (eprintf "warning: ~a is undefined\n" name)
                   #f])]
               [else
-               (fprintf (current-error-port)
-                        "warning: unimplemented delcaration type: ~a\n"
-                        decl)
+               (eprintf "warning: unimplemented delcaration type: ~a\n" decl)
                #f]))
       (cons (string->symbol name) ffi-obj)))
   (make-hash (filter (λ (x) (cdr x)) pairs)))
