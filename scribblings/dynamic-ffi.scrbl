@@ -129,7 +129,7 @@ command:
           [file (or/c string? path?)]
           [lib-path (or/c string? path? (cons/c (or/c string? path?) (listof string?)))]
           [headers (or/c string? path?)] ...)
-          (void)]{
+          void?]{
   Generates a static FFI where identifiers corresponding to C function names
   are prefixed with @racket[ffi-name] and bound to their associated FFI objects.
 }
@@ -139,7 +139,7 @@ command:
           [file (or/c string? path?)]
           [lib-path (or/c string? path? (cons/c (or/c string? path?) (listof string?)))]
           [headers (or/c string? path?)] ...)
-          (void)]{
+          void?]{
   Generates a static FFI whose interface is equivalent to the case-lambda function
   produced by @racket[define-dynamic-ffi].
 }
