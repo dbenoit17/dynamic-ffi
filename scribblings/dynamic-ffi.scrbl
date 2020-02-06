@@ -55,9 +55,9 @@ This library does not bundle clang or llvm.
 
 To install a clang toolchain on Fedora:
 
-@codeblock{
-  sudo dnf install "@"@"development tools" racket llvm-devel clang-devel
-}
+@codeblock|{
+  sudo dnf install "@development tools" racket llvm-devel clang-devel
+}|
 
 To install a clang toolchain on Ubuntu:
 
@@ -154,13 +154,25 @@ at runtime and provided as a dynamic FFI.
                       [compiler string?]
                       [flags (or/c string? 'auto)])]{
   Define FFI bindings by writing inline C code.  This form is designed for use
-  with the at-reader.  For security reasons @racket[define-dynamic-ffi] only
-  accepts C code as string literals.
+  with the @seclink["reader" #:doc '(lib "scribblings/scribble/scribble.scrbl")]{at-reader}.
+  For security reasons @racket[define-dynamic-ffi] only accepts C code as string literals.
+
+  @codeblock[#:keep-lang-line? #f]|{
+    #lang at-exp racket ;; this line specifies the reader, but will be hidden.
+    @define-inline-ffi[mylib]{
+      int add(int x, int y) {
+        return x + y;
+      }
+    }
+    (mylib 'add 3 4)
+  }|
+
+  The form can be used without the at-reader as well.
 
   @racketblock[
     (define-inline-ffi mylib
-      "int add(int x, int y) {"
-      "  return x + y;"
+      "int add(int x, int y) {\n"
+      "  return x + y;\n"
       "}")
 
     (mylib 'add 3 4)]
@@ -170,9 +182,9 @@ at runtime and provided as a dynamic FFI.
 
   @racketblock[
     (define-inline-ffi libm #:compile-flags "-lm" #:compiler "clang"
-      "#include <math.h>"
-      "double square_root(double x) {"
-      "  return sqrt(x);"
+      "#include <math.h>\n"
+      "double square_root(double x) {\n"
+      "  return sqrt(x);\n"
       "}")
     (libm 'square_root 16)]
 }
