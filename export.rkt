@@ -17,16 +17,18 @@
   create-static-ffi
   (contract-out          
     [generate-static-ffi
-     (-> (or/c string? symbol?)
+     (-> #:prune-undefined? boolean?
+         (or/c string? symbol?)
          (or/c string? path?) 
          (or/c string? path? (listof string?)) 
-         (or/c string? path?)  ... 
+         (or/c string? path?)  ...
          any)]
     [generate-mapped-static-ffi
-     (-> (or/c string? symbol?)
+     (-> #:prune-undefined? boolean?
+         (or/c string? symbol?)
          (or/c string? path?)
          (or/c string? path? (listof string?)) 
-         (or/c string? path?)  ... 
+         (or/c string? path?)  ...
          any)]))
 
 (define-runtime-path mapped-ffi-template-path
@@ -128,6 +130,8 @@
 ;; This is equivalent to build-ffi-obj-map in ffi.rkt,
 ;; except it produces racket source code instead
 ;; of runtime ffi objects.
+;; ffi-lib-obj is either #f or a foreign-library value where #f means
+;; don't check whether a symbol is defined.
 (define (format-ffi-obj-map ffi-data lib ffi-lib-obj . headers)
   (define pairs
     (for/list ([decl ffi-data])
@@ -142,7 +146,8 @@
               [(or (dffi:function-decl? decl)
                    (dffi:var-decl? decl))
                (cond
-                 [(get-ffi-obj (string->symbol name) ffi-lib-obj _byte (λ () #f))
+                 [(or (not ffi-lib-obj)
+                      (get-ffi-obj (string->symbol name) ffi-lib-obj _byte (λ () #f)))
                   ;; NOTE: use _byte as a dummy type which will return a Racket integer
                   ;; when the symbol exists, #f otherwise
                   (format "(get-ffi-obj '~a ~a\n    ~a \n    (warn-undefined-symbol '~a))"
@@ -196,34 +201,41 @@
 ;; ffi functions.  These are useful when ffi-data is generated earlier
 ;; in a routine and used by other functions than just export.
 ;; define-dynamic-ffi/cached in cached.rkt is an example of this.
-(define (create-static-ffi-generic dispatch ffi-data file ffi-name lib headers)
+(define (create-static-ffi-generic dispatch ffi-data prune-undefined?
+                                   file ffi-name lib headers)
   (define library-name (format "~a-ffi-lib" ffi-name))
   (define-values (ffi-library ffi-lib-obj)
     (cond [(or (string? lib) (path? lib))
            (values (format "(ffi-lib \"~a\")" lib)
-                   (ffi-lib lib))]
+                   (and prune-undefined? (ffi-lib lib)))]
           [(pair? lib)
            (values (format "(ffi-lib \"~a\" ~a)" (car lib)  (format-string-list (cdr lib)))
-                   (ffi-lib (car lib) (cdr lib)))]))
+                   (and prune-undefined? (ffi-lib (car lib) (cdr lib))))]))
   (define ffi-map (apply format-ffi-obj-map ffi-data library-name ffi-lib-obj headers))
   (dispatch file ffi-name library-name ffi-library headers ffi-map))
 
-(define (create-mapped-static-ffi ffi-data file ffi-name lib . headers)
-  (create-static-ffi-generic export-mapped-ffi ffi-data file ffi-name lib headers))
+(define (create-mapped-static-ffi #:prune-undefined? [prune-undefined? #f]
+                                  ffi-data file ffi-name lib . headers)
+  (create-static-ffi-generic export-mapped-ffi ffi-data prune-undefined?
+                             file ffi-name lib headers))
 
-(define (create-static-ffi ffi-data file ffi-name lib . headers)
-  (create-static-ffi-generic export-ffi ffi-data file ffi-name lib  headers))
+(define (create-static-ffi #:prune-undefined? [prune-undefined? #f]
+                           ffi-data file ffi-name lib . headers)
+  (create-static-ffi-generic export-ffi ffi-data prune-undefined?
+                             file ffi-name lib headers))
 
 ;; The generate ffi functions are the only user-facing export functions
 ;; provided by dynamic-ffi/unsafe.  These functions take only the
 ;; desired ffi name, the lib file, and the header files, and invoke
 ;; dffi:dynamic-ffi-parse themselves to export a static ffi.
-(define (generate-mapped-static-ffi ffi-name file lib-path . headers)
+(define (generate-mapped-static-ffi #:prune-undefined? [prune-undefined? #f]
+                                    ffi-name file lib-path . headers)
   (define ffi-data (apply dffi:dynamic-ffi-parse headers))
-  (apply create-mapped-static-ffi (append (list ffi-data file ffi-name lib-path) headers)))
+  (apply create-mapped-static-ffi ffi-data file ffi-name lib-path headers
+         #:prune-undefined? prune-undefined?))
 
-(define (generate-static-ffi ffi-name file lib-path . headers)
-  (define ffi-data (apply dffi:dynamic-ffi-parse headers ))
-  (apply create-static-ffi (append (list ffi-data file ffi-name lib-path) headers)))
-  
-
+(define (generate-static-ffi #:prune-undefined? [prune-undefined? #f]
+                             ffi-name file lib-path . headers)
+  (define ffi-data (apply dffi:dynamic-ffi-parse headers))
+  (apply create-static-ffi ffi-data file ffi-name lib-path headers
+         #:prune-undefined? prune-undefined?))
