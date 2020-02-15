@@ -17,19 +17,19 @@
   create-static-ffi
   (contract-out          
     [generate-static-ffi
-     (-> #:prune-undefined? boolean?
-         (or/c string? symbol?)
-         (or/c string? path?) 
-         (or/c string? path? (listof string?)) 
-         (or/c string? path?)  ...
-         any)]
+     (->* ((or/c string? symbol?)
+           (or/c string? path?)
+           (or/c string? path? (listof string?)))
+          (#:prune-undefined? any/c)
+          #:rest (listof (or/c string? path?))
+          any)]
     [generate-mapped-static-ffi
-     (-> #:prune-undefined? boolean?
-         (or/c string? symbol?)
-         (or/c string? path?)
-         (or/c string? path? (listof string?)) 
-         (or/c string? path?)  ...
-         any)]))
+     (->* ((or/c string? symbol?)
+           (or/c string? path?)
+           (or/c string? path? (listof string?)))
+          (#:prune-undefined? any/c)
+          #:rest (listof (or/c string? path?))
+          any)]))
 
 (define-runtime-path mapped-ffi-template-path
   (build-path "template-files" "mapped-ffi-template"))

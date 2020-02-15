@@ -42,7 +42,7 @@
   result)
 
 (define (debug-msg msg)
-  (when __debug (fprintf (current-error-port) "~a" msg)))
+  (when __debug (eprintf "~a" msg)))
 
 (define (string-ish-join l)
   (string-join
