@@ -125,7 +125,7 @@ command:
   without the dependency on @racket[dynamic-ffi].
 
 @defproc[(generate-static-ffi
-          [#:prune-undefined? prune-undefined? boolean? #f]
+          [#:prune-undefined? prune-undefined? any/c #f]
           [ffi-name (or/c string? symbol?)]
           [file (or/c string? path?)]
           [lib-path (or/c string? path? (cons/c (or/c string? path?) (listof string?)))]
@@ -133,12 +133,12 @@ command:
           void?]{
   Generates a static FFI where identifiers corresponding to C function names
   are prefixed with @racket[ffi-name] and bound to their associated FFI objects.
-  When @racket[prune-undefined?] is @racket[#t], the function consults
+  When @racket[prune-undefined?] is not @racket[#f], the function consults
   @racket[lib-path] to prune out symbols that are undefined.
 }
 
 @defproc[(generate-mapped-static-ffi
-          [#:prune-undefined? prune-undefined? boolean? #f]
+          [#:prune-undefined? prune-undefined? any/c #f]
           [ffi-name (or/c string? symbol?)]
           [file (or/c string? path?)]
           [lib-path (or/c string? path? (cons/c (or/c string? path?) (listof string?)))]
