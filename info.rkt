@@ -2,7 +2,7 @@
 (define collection "dynamic-ffi")
 (define deps '("base" "rackunit-lib"))
 (define build-deps '("racket-doc" "rackunit-lib" "at-exp-lib"
-                     "scribble-lib"))
+                     "scribble-lib" "scribble-doc"))
 (define scribblings '(("scribblings/dynamic-ffi.scrbl")))
 (define pkg-desc "")
 (define version "1.0")
