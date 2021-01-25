@@ -71,7 +71,7 @@ c_decl_array dynamic_ffi_parse(int argc, const char **argv, int deep_parse) {
     unsigned len = strlen(argv[i]);
     SmallString<sizeof(char)> st(argv[i], argv[i] + sizeof(char) *len);
     sys::fs::make_absolute(st);
-    source_list.push_back(st.str());
+    source_list.push_back(st.str().str());
   }
 
   ClangTool tool(*DB, (ArrayRef<std::string>) source_list);
