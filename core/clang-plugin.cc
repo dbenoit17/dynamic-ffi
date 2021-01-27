@@ -155,8 +155,9 @@ bool ffi::ffiASTConsumer::HandleTopLevelDecl(DeclGroupRef decls) {
         in which case the declarations won't be
         found for the ffi. */
 bool ffi::ffiASTConsumer::topLevelHeaderContains(Decl *d) {
-  std::string filename =
-    compiler.getSourceManager().getFilename(d->getLocation()).str();
+  SourceManager& srcManager = compiler.getSourceManager();
+  SourceLocation srcLoc = srcManager.getSpellingLoc(d->getLocation());
+  std::string filename = srcManager.getFilename(srcLoc).str();
   return accumulator.sources.count(filename);
 }
 
