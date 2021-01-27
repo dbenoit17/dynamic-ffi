@@ -125,6 +125,7 @@ command:
   without the dependency on @racket[dynamic-ffi].
 
 @defproc[(generate-static-ffi
+          [#:prune-undefined? prune-undefined? any/c #f]
           [ffi-name (or/c string? symbol?)]
           [file (or/c string? path?)]
           [lib-path (or/c string? path? (cons/c (or/c string? path?) (listof string?)))]
@@ -132,16 +133,19 @@ command:
           void?]{
   Generates a static FFI where identifiers corresponding to C function names
   are prefixed with @racket[ffi-name] and bound to their associated FFI objects.
+  When @racket[prune-undefined?] is not @racket[#f], the function consults
+  @racket[lib-path] to prune out symbols that are undefined.
 }
 
 @defproc[(generate-mapped-static-ffi
+          [#:prune-undefined? prune-undefined? any/c #f]
           [ffi-name (or/c string? symbol?)]
           [file (or/c string? path?)]
           [lib-path (or/c string? path? (cons/c (or/c string? path?) (listof string?)))]
           [headers (or/c string? path?)] ...)
           void?]{
-  Generates a static FFI whose interface is equivalent to the case-lambda function
-  produced by @racket[define-dynamic-ffi].
+  Similar to @racket[generate-static-ffi], but its interface is equivalent to the
+  case-lambda function produced by @racket[define-dynamic-ffi].
 }
 
 @section{Inline FFIs}
