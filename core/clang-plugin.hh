@@ -89,7 +89,7 @@ protected:
   std::unique_ptr<ASTConsumer>
     CreateASTConsumer(CompilerInstance &compiler,
                       llvm::StringRef) override {
-      return llvm::make_unique<ffiASTConsumer>(accumulator, compiler, deep_parse);
+      return std::make_unique<ffiASTConsumer>(accumulator, compiler, deep_parse);
     }
 };
 
@@ -102,8 +102,8 @@ newFFIActionFactory(ffiAccumulator &accumulator, bool deep_parse) {
   public:
     ffiActionFactory(ffiAccumulator &accumulator, bool deep_parse)
       : accumulator(accumulator), deep_parse(deep_parse) {}
-    FrontendAction *create() override {
-      return new T(accumulator, deep_parse);
+    std::unique_ptr<FrontendAction> create() override {
+      return std::unique_ptr<T>(new T(accumulator, deep_parse));
     }
   };
   return std::unique_ptr<FrontendActionFactory>(new ffiActionFactory(accumulator, deep_parse));
