@@ -134,7 +134,7 @@
                             lib name)
                    #f))]
               [else
-               (eprintf "warning: unimplemented delcaration type: ~a\n"
+               (eprintf "warning: unimplemented declaration type: ~a\n"
                         decl)
                #f]))
       (cons (string->symbol name) ffi-obj)))
