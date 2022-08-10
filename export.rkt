@@ -8,6 +8,8 @@
   racket/port
   racket/runtime-path
   racket/contract
+  racket/pretty
+  racket/match
   (only-in ffi/unsafe ffi-lib _byte get-ffi-obj)
   (for-syntax racket/base)
   (prefix-in dffi: "meta.rkt"))
@@ -20,7 +22,9 @@
      (->* ((or/c string? symbol?)
            (or/c string? path?)
            (or/c string? path? (listof string?)))
-          (#:prune-undefined? any/c)
+          (#:prune-undefined? any/c
+           #:named-structs? any/c
+           #:prefix-definitions? any/c)
           #:rest (listof (or/c string? path?))
           any)]
     [generate-mapped-static-ffi
@@ -73,11 +77,13 @@
         [(and (dffi:ctype-int? pointee)
               (eq? (dffi:ctype-width pointee) 8))
          '_string]
+        [(dffi:ctype-function? pointee)
+         (format "(_cpointer ~a)" (format-dffi-obj pointee))]
         ;; all pointers opaque for now to
         ;; prevent type conflicts
         [else '_pointer]))
         ;; would be cool to do it this way
-        ;;[else (_cpointer (format-dffi-obj pointee))]))
+        ;;[else (format "(_cpointer ~a)" (format-dffi-obj pointee))]))
 
 (define (format-ffi-array ct-array)
   (define element (dffi:ctype-array-element ct-array))
@@ -86,13 +92,17 @@
       (quotient (dffi:ctype-width ct-array)
                 (dffi:ctype-width element))))
 
-(define (format-ffi-struct ct-struct)
+(define (format-ffi-struct ct-struct #:named? [named? #f])
   (define struct-members
     (for/list ([mem (dffi:ctype-record-members ct-struct)])
       (format-dffi-obj mem)))
-  ;(define member-names (dffi:ctype-record-members ct-struct))
-  (if (null? struct-members) #f
-    (format "(apply _list-struct ~a)" (format-list struct-members))))
+  (define member-names (dffi:ctype-record-member-names ct-struct))
+  (cond [(null? struct-members) #f]
+        [named? `(cstruct ,(pretty-format (for/list ([name member-names]
+                                                     [mem struct-members])
+                                            `[,name ,mem])
+                                          #:mode 'display))]
+        [else (format "(apply _list-struct ~a)" (format-list struct-members))]))
 
 (define (format-ffi-union ct-union)
   (define union-members
@@ -112,14 +122,15 @@
       (format-dffi-obj maybe-return)))
   (format "(_cprocedure ~a ~a)" (format-list params) return))
 
-(define (format-dffi-obj ct)
+(define (format-dffi-obj ct
+                         #:named-structs? [named-structs? #f])
  (unless (dffi:ctype? ct)
   (error "expected dynamic-ffi ctype"))
  (cond
   [(dffi:ctype-int? ct) (format-ffi-int ct)]
   [(dffi:ctype-pointer? ct) (format-ffi-pointer ct)]
   [(dffi:ctype-float? ct) (format-ffi-float ct)]
-  [(dffi:ctype-struct? ct) (format-ffi-struct ct)]
+  [(dffi:ctype-struct? ct) (format-ffi-struct ct #:named? named-structs?)]
   [(dffi:ctype-union? ct) (format-ffi-union ct)]
   [(dffi:ctype-array? ct) (format-ffi-array ct)]
   [(dffi:ctype-function? ct) (format-ffi-function ct)]
@@ -132,7 +143,9 @@
 ;; of runtime ffi objects.
 ;; ffi-lib-obj is either #f or a foreign-library value where #f means
 ;; don't check whether a symbol is defined.
-(define (format-ffi-obj-map ffi-data lib ffi-lib-obj . headers)
+(define (format-ffi-obj-map ffi-data lib ffi-lib-obj
+                            #:named-structs? [named-structs? #f]
+                            . headers)
   (define pairs
     (for/list ([decl ffi-data])
       (define name (dffi:declaration-name decl))
@@ -142,7 +155,7 @@
                (format "~a" (dffi:declaration-literal-value decl))]
               [(or (dffi:record-decl? decl)
                    (dffi:typedef-decl? decl))
-               (format-dffi-obj type)]
+               (format-dffi-obj type #:named-structs? named-structs?)]
               [(or (dffi:function-decl? decl)
                    (dffi:var-decl? decl))
                (cond
@@ -182,13 +195,17 @@
            library-name lib ffi-name (format-string-list headers)
            ffi-name formatted-pairs ffi-name))))
 
-(define (export-ffi file ffi-name library-name lib headers ffi-map)
+(define ((export-ffi prefix-definitions?) file ffi-name library-name lib headers ffi-map)
   (define template-port (open-input-file defined-ffi-template-path))
   (define template (port->string template-port))
   (define formatted-definitions
      (string-join
        (for/list ([pr (filter (λ (x) (cdr x)) (hash->list ffi-map))])
-         (format "(define ~a-~a\n  ~a)\n\n" ffi-name (car pr) (cdr pr)))
+         (define name (if prefix-definitions? (format "~a-~a" ffi-name (car pr)) (car pr)))
+         (match (cdr pr)
+           [`(cstruct ,rst)
+            (format "(define-cstruct _~a\n  ~a)\n\n" name rst)]
+           [_ (format "(define ~a\n  ~a)\n\n" name (cdr pr))]))
        ""))
   (close-input-port template-port)
   (with-output-to-file file #:exists 'replace
@@ -202,7 +219,8 @@
 ;; in a routine and used by other functions than just export.
 ;; define-dynamic-ffi/cached in cached.rkt is an example of this.
 (define (create-static-ffi-generic dispatch ffi-data prune-undefined?
-                                   file ffi-name lib headers)
+                                   file ffi-name lib headers
+                                   #:named-structs? [named-structs? #f])
   (define library-name (format "~a-ffi-lib" ffi-name))
   (define-values (ffi-library ffi-lib-obj)
     (cond [(or (string? lib) (path? lib))
@@ -211,7 +229,9 @@
           [(pair? lib)
            (values (format "(ffi-lib \"~a\" ~a)" (car lib)  (format-string-list (cdr lib)))
                    (and prune-undefined? (ffi-lib (car lib) (cdr lib))))]))
-  (define ffi-map (apply format-ffi-obj-map ffi-data library-name ffi-lib-obj headers))
+  (define ffi-map (apply format-ffi-obj-map ffi-data library-name ffi-lib-obj
+                         #:named-structs? named-structs?
+                         headers))
   (dispatch file ffi-name library-name ffi-library headers ffi-map))
 
 (define (create-mapped-static-ffi #:prune-undefined? [prune-undefined? #f]
@@ -220,9 +240,12 @@
                              file ffi-name lib headers))
 
 (define (create-static-ffi #:prune-undefined? [prune-undefined? #f]
+                           #:prefix-definitions? [prefix-definitions? #t]
+                           #:named-structs? [named-structs? #f]
                            ffi-data file ffi-name lib . headers)
-  (create-static-ffi-generic export-ffi ffi-data prune-undefined?
-                             file ffi-name lib headers))
+  (create-static-ffi-generic (export-ffi prefix-definitions?) ffi-data
+                             prune-undefined? file ffi-name lib headers
+                             #:named-structs? named-structs?))
 
 ;; The generate ffi functions are the only user-facing export functions
 ;; provided by dynamic-ffi/unsafe.  These functions take only the
@@ -235,7 +258,11 @@
          #:prune-undefined? prune-undefined?))
 
 (define (generate-static-ffi #:prune-undefined? [prune-undefined? #f]
+                             #:prefix-definitions? [prefix-definitions? #t]
+                             #:named-structs? [named-structs? #f]
                              ffi-name file lib-path . headers)
   (define ffi-data (apply dffi:dynamic-ffi-parse headers))
   (apply create-static-ffi ffi-data file ffi-name lib-path headers
+         #:prefix-definitions? prefix-definitions?
+         #:named-structs? named-structs?
          #:prune-undefined? prune-undefined?))
